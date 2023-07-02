@@ -12,7 +12,7 @@ const FONTFAMILY = {
 }
 
 const COLORS = {
-    THEME: "#213d69",
+    THEME: "#0168b3",
     DEFAULT: '#888888',
     PRIMARY: '#f96332',
     LABEL: '#ABA7A7',

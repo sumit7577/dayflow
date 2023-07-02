@@ -1,3 +1,4 @@
 import Login from "./login"
+import Otp from "./otp"
 
-export {Login}
+export { Login, Otp }

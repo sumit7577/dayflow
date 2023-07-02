@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
-import { Theme as theme } from '../constants';
+import { Theme, Theme as theme } from '../constants';
 import { InputProps } from 'galio-framework';
 import Imageicon from "./icon";
 import { TouchableRipple } from 'react-native-paper';
@@ -9,7 +9,7 @@ interface inputProps extends InputProps {
     onPress?: () => void,
 }
 
-function Input(props: inputProps) {
+const Input = (props: inputProps) => {
     const {
         style,
         textInputStyle,
@@ -103,7 +103,7 @@ function Input(props: inputProps) {
                     style={inputStyles}
                     keyboardType={type}
                     secureTextEntry={isPassword}
-                    placeholderTextColor={placeholderTextColor}
+                    placeholderTextColor={placeholderTextColor || Theme.COLORS.MUTED}
                     underlineColorAndroid="transparent"
                     {...rest}
                 />
@@ -152,10 +152,11 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     inputText: {
-        color: theme.COLORS.INPUT,
+        color: theme.COLORS.BLACK,
         fontSize: theme.SIZES.INPUT_TEXT,
         textDecorationColor: 'transparent',
         textShadowColor: 'transparent',
+        fontFamily: Theme.FONTFAMILY.MEDIUM,
     },
     inputContainer: {
         flexDirection: 'row',
