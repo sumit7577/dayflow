@@ -6,9 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Block, Button } from 'galio-framework'
 import { AppDialogue, AppInput, AppLoader } from '../../components'
 import { TouchableRipple } from 'react-native-paper'
-import { useQuery } from '@tanstack/react-query'
 import { ApiController } from '../../networking'
-import { FirebaseAuthTypes } from '@react-native-firebase/auth'
 import { getUserState, userState } from '../../context/user/reducer'
 import { loginResp } from '../../networking/resp-type'
 import { connect } from 'react-redux'
@@ -101,13 +99,30 @@ function Otp(props: OtpProps) {
     }
   }
 
+  const signUpProfile = async () => {
+    try {
+      const token = await ApiController.login({ phone: route.params?.data.phone!! })
+      Database.set("user.token", token.message);
+      await getProfile()
+    }
+    catch (error) {
+      setError((prev) => ({ ...prev, loading: false, success: true, message: "User Not Found!" }))
+    }
+  }
+
   const verifyOtp = async () => {
     setError((prev) => ({ ...prev, loading: true, success: false }))
     if (otpData1.length > 0 && otpData2.length > 0 && otpData3.length > 0 && otpData4.length > 0 && otpData5.length > 0 && otpData6.length > 0) {
       try {
         const result = await route.params.callback.confirm(otpData1 + otpData2 + otpData3 + otpData4 + otpData5 + otpData6);
         if (result?.user) {
-          await getProfile();
+          if (route.params.mode === "Login") {
+            await getProfile();
+          }
+          else {
+            await signUpProfile();
+          }
+
         }
       }
       catch (error) {

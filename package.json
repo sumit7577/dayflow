@@ -12,6 +12,7 @@
     "build": "rm -rf ./android/app/src/main/res/drawable-* && rm -rf ./android/app/src/main/res/raw/node_modules_galioframework_src_fonts_galio.ttf && cd android && chmod 777 ./gradlew && ./gradlew assembleDebug"
   },
   "dependencies": {
+    "@miblanchard/react-native-slider": "^2.3.1",
     "@react-native-firebase/app": "^18.1.0",
     "@react-native-firebase/auth": "^18.1.0",
     "@react-navigation/native": "^6.1.7",

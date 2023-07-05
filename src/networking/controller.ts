@@ -1,3 +1,4 @@
+import { Dates } from "../screens/home/profile";
 import { SignupPost } from "./authTypes";
 import { client, shopName } from "./interceptor";
 import { loginResp } from "./resp-type";
@@ -8,7 +9,7 @@ export const timeParser = (date: string) => {
     return time[0]
 }
 
-export const timeCreater = (time: string):Date => {
+export const timeCreater = (time: string): Date => {
     var timeComponents = time.split(":");
     var hours = parseInt(timeComponents[0], 10);
     var minutes = parseInt(timeComponents[1], 10);
@@ -31,8 +32,8 @@ const signup = async (input: Partial<Omit<loginResp, "id">>): Promise<loginResp>
     return data;
 }
 
-const pathchProfile = async (input: Partial<loginResp>, id: number): Promise<loginResp> => {
-    const formInput = { ...input };
+const pathchProfile = async (input: Partial<loginResp>, id: number, working_days: typeof Dates): Promise<loginResp> => {
+    const formInput = { ...input, working_days: working_days };
     if (formInput.working_time_end) {
         formInput.working_time_end = timeParser(formInput.working_time_end)
     }
@@ -60,4 +61,15 @@ const profile = async (): Promise<Array<loginResp>> => {
     return data;
 }
 
-export default { signup, login, profile, pathchProfile };
+const getSearch = async (input: string): Promise<{
+    "count": 0,
+    "next": null,
+    "previous": null,
+    "results": Array<loginResp>
+}> => {
+    const response = await client.get(`${shopName}search/${input}/`);
+    const data = await response.data;
+    return data;
+}
+
+export default { signup, login, profile, pathchProfile, getSearch };

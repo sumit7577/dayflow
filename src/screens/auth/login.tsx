@@ -34,7 +34,7 @@ const Signup: React.FC<{ setSignup: React.Dispatch<Partial<User>>, signUp: () =>
 }
 type LoginProps = AuthStackProps<"Login">;
 
-interface User {
+export interface User {
   phone: string,
   email: string | null,
   username: string
@@ -62,7 +62,9 @@ export default function Login(props: LoginProps) {
         Database.set("user.token", data.message);
         const callback = await auth().signInWithPhoneNumber(`+${userData.phone}`);
         navigation.navigate("Otp", {
-          callback: callback
+          callback: callback,
+          mode: "Login",
+          data:userData
         })
       }
     }
@@ -74,10 +76,10 @@ export default function Login(props: LoginProps) {
 
     },
     onSuccess: async (data) => {
-      const datas = await ApiController.login({ phone: data.phone })
-      Database.set("user.token", datas.message)
       navigation.navigate("Otp", {
-        callback: callback
+        callback: callback,
+        mode: "Signup",
+        data:userData
       })
     },
     onMutate: async (variables) => {
@@ -99,7 +101,6 @@ export default function Login(props: LoginProps) {
     <SafeAreaView>
       <View style={styles.container}>
         <AppDialogue show={loginMutation.isError || signUpMutation.isError} error={loginMutation.error || signUpMutation.error} />
-        <AppDialogue show={signUpMutation.isSuccess} error={{ name: "Success!", message: "User Successfully Created" }} />
         <AppLoader show={loginMutation.isLoading || signUpMutation.isLoading} />
         <View style={styles.header}>
           <Block middle>

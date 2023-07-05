@@ -9,7 +9,9 @@ import {
   StyleSheet,
   Text,
   StyleProp,
-  ViewStyle
+  ViewStyle,
+  ImageStyle,
+  ImageProps
 } from 'react-native';
 import { Theme } from '../constants';
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
@@ -28,16 +30,16 @@ type IconProps = {
 
 type Props = IconProps & {
   color?: string;
-  source: any;
-  iconStyle?: StyleProp<ViewStyle>
+  source: string;
+  iconStyle?: StyleProp<ViewStyle>,
+  imageStyle?: StyleProp<ImageStyle>
 };
 
 const isImageSource = (source: any) =>
   // source is an object with uri
-  (typeof source === 'object' &&
+  (typeof source === 'string' &&
     source !== null &&
-    Object.prototype.hasOwnProperty.call(source, 'uri') &&
-    typeof source.uri === 'string') ||
+    source.includes("http")) ||
   // source is a module, e.g. - require('image')
   typeof source === 'number' ||
   // image url on web
@@ -46,65 +48,33 @@ const isImageSource = (source: any) =>
     (source.startsWith('data:image') ||
       /\.(bmp|jpg|jpeg|png|gif|svg)$/.test(source)));
 
-const getIconId = (source: any) => {
-  if (
-    typeof source === 'object' &&
-    source !== null &&
-    Object.prototype.hasOwnProperty.call(source, 'uri') &&
-    typeof source.uri === 'string'
-  ) {
-    return source.uri;
-  }
-
-  return source;
-};
-
-export const isValidIcon = (source: any) =>
-  typeof source === 'string' ||
-  typeof source === 'function' ||
-  isImageSource(source);
-
-export const isEqualIcon = (a: any, b: any) =>
-  a === b || getIconId(a) === getIconId(b);
-
 const Icon = ({
   source,
   color,
   size,
   iconStyle,
+  imageStyle,
   ...rest
 }: Props) => {
-  const direction =
-    typeof source === 'object' && source.direction && source.source
-      ? source.direction === 'auto'
-        ? I18nManager.getConstants().isRTL
-          ? 'rtl'
-          : 'ltr'
-        : source.direction
-      : null;
 
-  const s =
-    typeof source === 'object' && source.direction && source.source
-      ? source.source
-      : source;
   const iconColor =
     color || Theme.COLORS.BLACK
 
-  if (isImageSource(s)) {
+  const s = typeof source == "string" && source.includes("http") ? { uri: source } : source;
+
+  if (isImageSource(source)) {
     return (
       <Image
         {...rest}
         source={s}
         style={[
           {
-            transform: [{ scaleX: direction === 'rtl' ? -1 : 1 }],
-          },
-          {
             width: size,
             height: size,
             tintColor: color,
             resizeMode: `contain`,
           },
+          imageStyle && imageStyle
         ]}
         accessibilityIgnoresInvertColors
       />
@@ -113,7 +83,6 @@ const Icon = ({
     const IconStyle = [iconStyle && iconStyle,
     styles.icon,
     {
-      transform: [{ scaleX: direction === 'rtl' ? -1 : 1 }],
       lineHeight: size,
     }
     ]

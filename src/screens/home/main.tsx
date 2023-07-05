@@ -1,24 +1,39 @@
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native'
-import React from 'react'
+import React, { useRef } from 'react'
 import { Pictures, Theme, Utils } from '../../constants'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Block, Button } from 'galio-framework'
-import { AppIcon, AppInput } from '../../components'
+import { AppDialogue, AppIcon, AppInput } from '../../components'
 import { TouchableRipple } from 'react-native-paper'
 import { getUserState, userState } from '../../context/user/reducer'
 import { HomeStackProps } from '../../navigators/homestack'
 import { loginResp } from '../../networking/resp-type'
 import { loginAction } from '../../context/user/action'
 import { connect } from 'react-redux'
+import { Slider } from '@miblanchard/react-native-slider';
 
 type MainProps = userState & HomeStackProps<"Main"> & {
   setUser: (arg0: loginResp) => void;
 }
 function Main(prop: MainProps) {
-  const { navigation, userData, setUser } = prop;
+  const { navigation, userData, setUser, route } = prop;
+  const [search, setSearch] = React.useState<string>(null!!);
+  const [selectedTime, setSelectedTime] = React.useState<number | null>(null);
+  const [sliderValue, setSliderValue] = React.useState<Array<number> | null>(null);
+  const user = route.params?.user;
+  const workingTable = user && Utils.timeToArray(user.working_time_start, user.working_time_end)
+  const [error, setError] = React.useState<boolean>(false);
+
+  const onRequest = () => {
+    setError(() => !error)
+  }
   return (
     <SafeAreaView>
       <ScrollView showsVerticalScrollIndicator={false}>
+        <AppDialogue show={error} error={{
+          name: 'Coming Soon!',
+          message: 'This Feature will arrive on 20th july'
+        }} onSuccess={() => setError(() => !error)} />
         <View style={styles.container}>
           <View style={styles.header}>
             <Block style={styles.block}>
@@ -26,82 +41,109 @@ function Main(prop: MainProps) {
             </Block>
 
             <Block middle row space='evenly'>
-              <AppInput style={{ width: Utils.width / 1.5 }} right rounded placeholder='Search' icon='card-search-outline'
-                onPress={() => { console.log("pressed") }} />
+              <AppInput value={search} editable={true} style={{ width: Utils.width / 1.5 }} right rounded placeholder='Search' icon='card-search-outline'
+                onChangeText={(text) => { setSearch(() => text) }} onSubmitEditing={() => {
+                  navigation.navigate("Search", {
+                    name: search
+                  })
+                }} />
               <Block style={{ borderWidth: 2, borderRadius: 50, borderColor: Theme.COLORS.THEME }}>
-                <Image source={Pictures.authPictures.logo} style={{ height: 50, width: 50 }} />
+                <AppIcon source={user?.profile_picture ?? Pictures.authPictures.logo} size={50} imageStyle={{ resizeMode: "contain", borderRadius: 50 }} />
               </Block>
             </Block>
           </View>
 
           <View style={styles.body}>
-            <Block style={styles.block}>
-              <Block center style={{ borderRadius: 24, backgroundColor: "#EAEAEA", width: "50%", marginVertical: "3%" }}>
-                <Text style={[styles.text, {
-                  color: Theme.COLORS.THEME,
-                  padding: "2%"
-                }]}>MONDAY</Text>
-              </Block>
-
-              <View style={{ maxHeight: Utils.height / 3 }}>
-                <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
-                  {Array.from('aaaaaaaa').map((item, index) => (
-                    <TouchableRipple key={index} style={{ marginVertical: "4%" }} onPress={() => { console.log("prssed") }}>
-                      <Block row key={index} space='around' middle style={{ borderRadius: 24, backgroundColor: "#EAEAEA", padding: "3.5%" }}>
-                        <Text style={[styles.text, {
-                          textAlign: "center",
-                          fontSize: 12,
-                          color: Theme.COLORS.MUTED
-                        }]}>{8 + index}:00 AM</Text>
-                        <Text style={[styles.text, {
-                          textAlign: "center",
-                          fontSize: 12,
-                          color: Theme.COLORS.MUTED
-                        }]}>
-                          -
-                        </Text>
-                        <Text style={[styles.text, {
-                          textAlign: "center",
-                          fontSize: 12,
-                          color: Theme.COLORS.MUTED
-                        }]}>
-                          {8 + index + 1}:00 AM
-                        </Text>
-                      </Block>
-                    </TouchableRipple>
-                  ))}
-                </ScrollView>
-              </View>
-
-              <Block style={{ marginVertical: "4%" }}>
-                <Block row space='between' style={{ paddingHorizontal: "4%", paddingVertical: "4%" }}>
-                  <Text style={{
-                    ...Utils.text,
-                    backgroundColor: Theme.COLORS.THEME, borderRadius: 24, paddingHorizontal: "5%",
-                    color: Theme.COLORS.WHITE, fontSize: 14
-                  }}>FROM</Text>
-                  <Text style={{
-                    ...Utils.text,
-                    backgroundColor: Theme.COLORS.MUTED, borderRadius: 24, paddingHorizontal: "5%",
-                    color: Theme.COLORS.WHITE, fontSize: 14
-                  }}>TO</Text>
-                  <Block style={{ backgroundColor: Theme.COLORS.THEME, borderRadius: 24, paddingHorizontal: "5%" }}>
-                    <AppIcon size={20} source={'check'} color={Theme.COLORS.WHITE} />
-                  </Block>
+            {user ?
+              <Block style={styles.block}>
+                <Block center style={{ borderRadius: 24, backgroundColor: "#EAEAEA", width: "50%", marginVertical: "3%" }}>
+                  <Text style={[styles.text, {
+                    color: Theme.COLORS.THEME,
+                    padding: "2%"
+                  }]}>MONDAY</Text>
                 </Block>
-                <AppInput placeholder="Write about your time (15 Words)" scrollEnabled={true}
-                  multiline={true} numberOfLines={4} style={{
-                    height: Utils.height / 8,
-                    borderWidth: 2, borderColor: Theme.COLORS.THEME,
-                  }} textInputStyle={{ fontSize: 12 }} />
-              </Block>
-              <Block middle>
-                <Button round color={Theme.COLORS.THEME} style={{ width: Utils.width / 1.2 }}>
-                  <Text style={[styles.text, { color: Theme.COLORS.WHITE, fontSize: 14 }]}>REQUEST</Text>
-                </Button>
-              </Block>
-            </Block>
 
+                <View style={{ maxHeight: Utils.height / 3 }}>
+                  <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
+                    {workingTable?.map((item, index) => (
+                      <TouchableRipple key={index} style={{ marginVertical: "4%" }} onPress={() => { setSelectedTime(() => index) }}>
+                        <Block row key={index} space='around' middle style={{
+                          borderRadius: 24,
+                          backgroundColor: index == selectedTime ? Theme.COLORS.THEME : "#EAEAEA", padding: "3.5%"
+                        }}>
+                          <Text style={[styles.text, {
+                            textAlign: "center",
+                            fontSize: 12,
+                            color: index == selectedTime ? Theme.COLORS.WHITE : Theme.COLORS.MUTED
+                          }]}>{item.start}</Text>
+                          <Text style={[styles.text, {
+                            textAlign: "center",
+                            fontSize: 12,
+                            color: index == selectedTime ? Theme.COLORS.WHITE : Theme.COLORS.MUTED
+                          }]}>
+                            -
+                          </Text>
+                          <Text style={[styles.text, {
+                            textAlign: "center",
+                            fontSize: 12,
+                            color: index == selectedTime ? Theme.COLORS.WHITE : Theme.COLORS.MUTED
+                          }]}>
+                            {item.end}
+                          </Text>
+                        </Block>
+                      </TouchableRipple>
+                    ))}
+                  </ScrollView>
+                </View>
+
+                <Block style={{ marginVertical: "4%" }}>
+                  {selectedTime &&
+                    <Block style={{ marginTop: "8%" }}>
+                      <Slider
+                        minimumValue={1}
+                        maximumValue={59}
+                        value={sliderValue ? sliderValue : [1, 59]}
+                        onValueChange={value => { setSliderValue(() => value) }}
+                        renderAboveThumbComponent={(value, index) => {
+                          const frontPart = workingTable && workingTable[selectedTime]?.start.split(":")[0];
+                          const backPart = workingTable && workingTable[selectedTime]?.start.split(" ")[1]
+                          return (
+                            <Text style={[styles.text, { fontSize: 12 }]}>{sliderValue && `${frontPart}:${sliderValue[value].toFixed(0)} ${backPart}`}</Text>
+                          )
+                        }}
+                      />
+                    </Block>}
+
+                  <Block row space='between' style={{ paddingHorizontal: "4%", paddingVertical: "4%" }}>
+                    <Text style={{
+                      ...Utils.text,
+                      backgroundColor: Theme.COLORS.THEME, borderRadius: 24, paddingHorizontal: "5%",
+                      color: Theme.COLORS.WHITE, fontSize: 14
+                    }}>FROM</Text>
+                    <Text style={{
+                      ...Utils.text,
+                      backgroundColor: Theme.COLORS.MUTED, borderRadius: 24, paddingHorizontal: "5%",
+                      color: Theme.COLORS.WHITE, fontSize: 14
+                    }}>TO</Text>
+                    <Block style={{ backgroundColor: Theme.COLORS.THEME, borderRadius: 24, paddingHorizontal: "5%" }}>
+                      <AppIcon size={20} source={'check'} color={Theme.COLORS.WHITE} />
+                    </Block>
+                  </Block>
+                  <AppInput placeholder="Write about your time (15 Words)" scrollEnabled={true}
+                    multiline={true} numberOfLines={4} style={{
+                      height: Utils.height / 8,
+                      borderWidth: 2, borderColor: Theme.COLORS.THEME,
+                    }} textInputStyle={{ fontSize: 12 }} />
+                </Block>
+                <Block middle>
+                  <Button round color={Theme.COLORS.THEME} style={{ width: Utils.width / 1.2 }} onPress={onRequest}>
+                    <Text style={[styles.text, { color: Theme.COLORS.WHITE, fontSize: 14 }]}>REQUEST</Text>
+                  </Button>
+                </Block>
+              </Block>
+              : <Block middle style={{ marginVertical: "8%", flex: 7 }}>
+                <Text style={[styles.text, { ...Utils.textExtraBold }]}>No User Selected</Text>
+              </Block>}
           </View>
 
           <View style={styles.footer}>
@@ -150,7 +192,6 @@ const styles = StyleSheet.create({
     marginVertical: "4%"
   },
   body: {
-
   },
   footer: {
 

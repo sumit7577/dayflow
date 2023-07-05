@@ -38,7 +38,6 @@ const inputStyles: StyleProp<ViewStyle> = {
 }
 
 export function humanReadableDuration(msDuration: number): string {
-    console.log("dur",msDuration)
     const h = Math.floor(msDuration / 1000 / 60 / 60);
     const m = Math.floor((msDuration / 1000 / 60 / 60 - h) * 60);
     const s = Math.floor(((msDuration / 1000 / 60 / 60 - h) * 60 - m) * 60);
@@ -51,4 +50,25 @@ export function humanReadableDuration(msDuration: number): string {
 
 }
 
-export default { height, width, textExtraBold, textBold, textWhite, text, container, inputStyles, humanReadableDuration };
+const timeToArray = (start: string, end: string) => {
+    const starting = start !== null && typeof start == 'string' ? start.split(":")[0] : "8";
+    const ending = end !== null && typeof end == 'string' ? end.split(":")[0] : "18"
+    const dataArray = [];
+    for (let i = parseInt(starting); i <= parseInt(ending); i++) {
+        if (i === parseInt(ending)) break;
+        if (i > 12) {
+            dataArray.push({ start: `${i - 12}:00 PM`, end: `${(i + 1) - 12}:00 PM` })
+        }
+        else if (i === 12) {
+            dataArray.push({ start: `${i}:00 AM`, end: `${(i + 1) - 12}:00 PM` })
+        }
+        else {
+            dataArray.push({ start: `${i}:00 AM`, end: `${i + 1}:00 AM` })
+        }
+
+
+    }
+    return dataArray;
+}
+
+export default { height, width, textExtraBold, textBold, textWhite, text, container, inputStyles, humanReadableDuration, timeToArray };

@@ -5,8 +5,14 @@ const userResp = {
         "username": "admin"
     },
     "phone": "",
-    "proffession": { proffession: new Array<string> },
-    "interest": { interest: new Array<string> },
+    "proffession": new Array<string>,
+    'profile_picture': "",
+    "interest": new Array<string>,
+    'working_days': new Array<{
+        name: string;
+        selected: boolean;
+        num: number;
+    }>,
     "working_time_start": "09:12:54",
     "working_time_end": "09:12:55",
     "about": ""
