@@ -11,6 +11,7 @@ import { getUserState, userState } from '../../context/user/reducer'
 import { loginResp } from '../../networking/resp-type'
 import { connect } from 'react-redux'
 import { loginAction } from '../../context/user/action'
+import { useMutation } from '@tanstack/react-query'
 
 type OtpProps = AuthStackProps<"Otp"> & userState & {
   setUser: (arg0: loginResp) => void;
@@ -31,6 +32,42 @@ function Otp(props: OtpProps) {
   const [otpData4, setOtpData4] = useState('');
   const [otpData5, setOtpData5] = useState('');
   const [otpData6, setOtpData6] = useState('');
+  const [minutes, setMinutes] = useState(1);
+  const [seconds, setSeconds] = useState(59);
+  
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      if (seconds > 0) {
+        setSeconds(seconds - 1);
+      }
+      if (seconds === 0) {
+        if (minutes === 0) {
+          clearInterval(interval);
+        } else {
+          setSeconds(59);
+          setMinutes(minutes - 1);
+        }
+      }
+    }, 1000);
+    return () => {
+      clearInterval(interval)
+    }
+  }, [seconds])
+
+  const validateMutate = useMutation({
+    mutationKey: ['validate'],
+    mutationFn: (otp: string) => {
+      return ApiController.validate(route.params.data.phone!!, otp)
+    },
+    onSuccess: async (data) => {
+      Database.set("user.token", data.message);
+      const userData = await ApiController.profile();
+      if (userData[0].id) {
+        setUser(userData[0])
+        Database.set("user", JSON.stringify(userData[0]))
+      }
+    }
+  })
 
   const text1Change = (text: any) => {
     setOtpData1(text)
@@ -86,62 +123,19 @@ function Otp(props: OtpProps) {
     }
   }
 
-  const getProfile = async () => {
-    try {
-      const profile = await ApiController.profile();
-      if (profile[0].id) {
-        setUser(profile[0]);
-        Database.set("user", JSON.stringify(profile[0]))
-      }
-    }
-    catch (error) {
-      setError((prev) => ({ ...prev, loading: false, success: true, message: "User Not Found!" }))
-    }
-  }
-
-  const signUpProfile = async () => {
-    try {
-      const token = await ApiController.login({ phone: route.params?.data.phone!! })
-      Database.set("user.token", token.message);
-      await getProfile()
-    }
-    catch (error) {
-      setError((prev) => ({ ...prev, loading: false, success: true, message: "User Not Found!" }))
-    }
-  }
-
-  const verifyOtp = async () => {
-    setError((prev) => ({ ...prev, loading: true, success: false }))
+  const verifyOtp = () => {
     if (otpData1.length > 0 && otpData2.length > 0 && otpData3.length > 0 && otpData4.length > 0 && otpData5.length > 0 && otpData6.length > 0) {
-      try {
-        const result = await route.params.callback.confirm(otpData1 + otpData2 + otpData3 + otpData4 + otpData5 + otpData6);
-        if (result?.user) {
-          if (route.params.mode === "Login") {
-            await getProfile();
-          }
-          else {
-            await signUpProfile();
-          }
-
-        }
-      }
-      catch (error) {
-        setError((prev) => ({ ...prev, success: true, loading: false, message: "Please Enter Valid Otp!" }))
-      }
-
-    }
-    else {
-      setError((prev) => ({ ...prev, loading: false, success: true, message: "Please Fill All Otp" }))
+      validateMutate.mutate(otpData1 + otpData2 + otpData3 + otpData4 + otpData5 + otpData6);
     }
   }
   return (
     <SafeAreaView>
       <View style={styles.container}>
-        <AppDialogue show={errors.success} error={{ name: "Invalid Otp!", message: errors.message }} />
-        <AppLoader show={errors.loading} />
+        <AppDialogue show={validateMutate.isError} error={validateMutate.error} />
+        <AppLoader show={validateMutate.isLoading} />
         <View style={styles.header}>
           <Block middle>
-            <Image source={Pictures.authPictures.logo} style={{ resizeMode: "contain", height: Utils.height / 4, width: Utils.width }} />
+            <Image source={Pictures.authPictures.otp} style={{ resizeMode: "contain", height: Utils.height / 4, width: Utils.width }} />
           </Block>
         </View>
 
@@ -167,7 +161,7 @@ function Otp(props: OtpProps) {
               <Button color={Theme.COLORS.THEME} round style={{ width: "100%", marginVertical: "4%" }} onPress={verifyOtp}>
                 <Text style={[styles.text, { ...Utils.textWhite, fontSize: 14 }]}>VERIFY</Text>
               </Button>
-              <Text style={styles.text}>1:49</Text>
+              <Text style={styles.text}>{minutes}:{seconds}</Text>
               <Block style={{ backgroundColor: "#0A3A5C", borderRadius: 24, marginVertical: "8%" }}>
                 <TouchableRipple onPress={() => { navigation.goBack() }}>
                   <Text style={[{ ...Utils.textBold }, { color: Theme.COLORS.WHITE, fontSize: 12, paddingHorizontal: "8%", paddingVertical: "1%" }]}>

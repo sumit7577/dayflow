@@ -59,7 +59,7 @@ function Profile(props: ProfileProps) {
       setUserDetail(JSON.stringify(data))
     }
   })
-
+  
   const { data, isLoading } = useQuery({
     queryKey: ['profile'],
     queryFn: ApiController.profile,
@@ -94,7 +94,9 @@ function Profile(props: ProfileProps) {
   return (
     <SafeAreaView>
       <AppDialogue show={patchProfile.isError} error={patchProfile.error} />
-      <AppDialogue show={patchProfile.isSuccess} error={{ name: "Success", message: "Profile Updated Successfully!" }} icon={"sticker-check"} />
+      <AppDialogue show={patchProfile.isSuccess} error={{ name: "Success", message: "Profile Updated Successfully!" }} icon={"sticker-check"} onSuccess={() => {
+        navigation.goBack()
+      }} />
       <AppLoader show={patchProfile.isLoading || isLoading} />
       <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
         <View style={styles.container}>
@@ -138,11 +140,12 @@ function Profile(props: ProfileProps) {
               <Block center style={{
                 borderWidth: 2, borderColor: Theme.COLORS.THEME,
                 zIndex: 0,
-                height: Utils.height / 8, width: Utils.width / 4, borderRadius: 50
+                height: Utils.height / 8, width: Utils.width / 4, borderRadius: 50,
+                bottom:"15%"
               }}>
-                <AppIcon source={userData?.profile_picture ?? Pictures.authPictures.logo} imageStyle={{ borderRadius: 50, resizeMode: "contain" }} size={90} />
+                <AppIcon source={userData?.profile_picture ?? Pictures.authPictures.profile} imageStyle={{ borderRadius: 50, resizeMode: "contain" }} size={90} />
               </Block>
-              <Block style={{ paadingHorizontal: "4%", marginTop: "4%" }}>
+              <Block style={{ paadingHorizontal: "4%"}}>
                 <MultiSelect
                   hideTags={false}
                   items={List.Proffession}

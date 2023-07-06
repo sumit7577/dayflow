@@ -21,7 +21,7 @@ function Main(prop: MainProps) {
   const [selectedTime, setSelectedTime] = React.useState<number | null>(null);
   const [sliderValue, setSliderValue] = React.useState<Array<number> | null>(null);
   const user = route.params?.user;
-  const workingTable = user && Utils.timeToArray(user.working_time_start, user.working_time_end)
+  const workingTable = Utils.timeToArray(null,null)
   const [error, setError] = React.useState<boolean>(false);
 
   const onRequest = () => {
@@ -41,20 +41,18 @@ function Main(prop: MainProps) {
             </Block>
 
             <Block middle row space='evenly'>
-              <AppInput value={search} editable={true} style={{ width: Utils.width / 1.5 }} right rounded placeholder='Search' icon='card-search-outline'
+              <AppInput value={search} editable={true} style={{ width: Utils.width / 1.5 }} right rounded placeholder='Search' icon='magnify'
                 onChangeText={(text) => { setSearch(() => text) }} onSubmitEditing={() => {
-                  navigation.navigate("Search", {
-                    name: search
-                  })
+                  setError(() => true)
                 }} />
               <Block style={{ borderWidth: 2, borderRadius: 50, borderColor: Theme.COLORS.THEME }}>
-                <AppIcon source={user?.profile_picture ?? Pictures.authPictures.logo} size={50} imageStyle={{ resizeMode: "contain", borderRadius: 50 }} />
+                <AppIcon source={user?.profile_picture ?? Pictures.authPictures.profile} size={50} imageStyle={{ resizeMode: "contain", borderRadius: 50 }} />
               </Block>
             </Block>
           </View>
 
           <View style={styles.body}>
-            {user ?
+            {!user ?
               <Block style={styles.block}>
                 <Block center style={{ borderRadius: 24, backgroundColor: "#EAEAEA", width: "50%", marginVertical: "3%" }}>
                   <Text style={[styles.text, {
@@ -163,7 +161,7 @@ function Main(prop: MainProps) {
               </Block>
 
               <Block>
-                <TouchableRipple onPress={() => { navigation.navigate("Profile") }}>
+                <TouchableRipple onPress={() => { navigation.navigate('Setting') }}>
                   <Block middle style={{ backgroundColor: Theme.COLORS.THEME, borderRadius: 24, padding: "10%" }}>
                     <AppIcon source={"cog"} size={24} color={Theme.COLORS.WHITE} />
                   </Block>

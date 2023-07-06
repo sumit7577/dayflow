@@ -1,11 +1,10 @@
-import { View, Text, SafeAreaView, StyleSheet, Image } from 'react-native'
+import { View, Text, SafeAreaView, StyleSheet, Image, StatusBar } from 'react-native'
 import React from 'react'
 import { AuthStackProps } from '../../navigators/authstach'
 import { Utils, Pictures, Theme, Database } from '../../constants'
 import { Block, Button, Checkbox } from 'galio-framework'
 import { AppInput, AppDialogue, AppLoader } from '../../components'
 import { TouchableRipple } from 'react-native-paper'
-import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { useMutation } from '@tanstack/react-query'
 import { ApiController } from '../../networking'
 
@@ -44,7 +43,6 @@ export interface User {
 export default function Login(props: LoginProps) {
   const { navigation } = props;
   const [mode, setMode] = React.useState<"Login" | "Signup">("Login");
-  const [callback, setCallback] = React.useState<FirebaseAuthTypes.ConfirmationResult>(null!!);
   const [userData, setUserData] = React.useReducer((curr: User, update: Partial<User>): User => {
     const newEvent = { ...curr, ...update };
     if (newEvent.phone.length === 10) {
@@ -59,12 +57,9 @@ export default function Login(props: LoginProps) {
     },
     onSuccess: async (data) => {
       if (data.success) {
-        Database.set("user.token", data.message);
-        const callback = await auth().signInWithPhoneNumber(`+${userData.phone}`);
         navigation.navigate("Otp", {
-          callback: callback,
           mode: "Login",
-          data:userData
+          data: userData
         })
       }
     }
@@ -77,17 +72,15 @@ export default function Login(props: LoginProps) {
     },
     onSuccess: async (data) => {
       navigation.navigate("Otp", {
-        callback: callback,
         mode: "Signup",
-        data:userData
+        data: userData
       })
     },
-    onMutate: async (variables) => {
-      const callback = await auth().signInWithPhoneNumber(`+${userData.phone}`);
-      if (callback.verificationId) {
-        setCallback(() => callback)
+    onError: (data: { name: string, message: string }) => {
+      if (data.message.includes("exists")) {
+        setMode("Login")
       }
-    },
+    }
   })
 
   const login = async () => {
@@ -104,7 +97,7 @@ export default function Login(props: LoginProps) {
         <AppLoader show={loginMutation.isLoading || signUpMutation.isLoading} />
         <View style={styles.header}>
           <Block middle>
-            <Image source={Pictures.authPictures.logo} style={{ resizeMode: "contain", height: Utils.height / 4, width: Utils.width }} />
+            <Image source={Pictures.authPictures.login} style={{ resizeMode: "contain", height: Utils.height / 4, width: Utils.width }} />
           </Block>
         </View>
         <View style={styles.body}>
@@ -173,7 +166,7 @@ const styles = StyleSheet.create({
 
   },
   header: {
-
+    marginTop:"8%"
   },
   body: {
     paddingHorizontal: "7%",
@@ -181,7 +174,7 @@ const styles = StyleSheet.create({
     elevation: 4,
     borderRadius: 8,
     margin: "4%",
-    height: "70%",
+    height: "65%",
     paddingVertical: "7%"
   },
   footer: {

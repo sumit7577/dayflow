@@ -30,8 +30,11 @@ const Dialogue: React.FC<DialogueProps> = (prop: DialogueProps) => {
                     <Paragraph style={[styles.text, { textAlign: "center" }]}>{error?.message}</Paragraph>
                 </Dialog.Content>
                 {action && <Dialog.Actions>
-                    <Button onPress={() => { setShow(() => false) }}>Cancel</Button>
-                    <Button onPress={() => confirmPress && confirmPress}>Confirm</Button>
+                    <Button onPress={() => {
+                        setShow(() => false)
+                        onSuccess && onSuccess()
+                    }}>Cancel</Button>
+                    <Button onPress={() => confirmPress && confirmPress()}>Confirm</Button>
                 </Dialog.Actions>}
 
             </Dialog>

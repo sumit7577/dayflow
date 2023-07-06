@@ -72,4 +72,13 @@ const getSearch = async (input: string): Promise<{
     return data;
 }
 
-export default { signup, login, profile, pathchProfile, getSearch };
+const validate = async (phone: string, otp: string): Promise<{ success: boolean, message: string }> => {
+    const response = await client.post(`${shopName}/validate/`, {
+        phone: phone,
+        otp: otp
+    });
+    const data = await response.data;
+    return data;
+}
+
+export default { signup, login, profile, pathchProfile, getSearch, validate };

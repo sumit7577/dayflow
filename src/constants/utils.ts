@@ -50,7 +50,7 @@ export function humanReadableDuration(msDuration: number): string {
 
 }
 
-const timeToArray = (start: string, end: string) => {
+const timeToArray = (start: string | null, end: string | null) => {
     const starting = start !== null && typeof start == 'string' ? start.split(":")[0] : "8";
     const ending = end !== null && typeof end == 'string' ? end.split(":")[0] : "18"
     const dataArray = [];

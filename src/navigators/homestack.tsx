@@ -2,13 +2,15 @@ import { NativeStackScreenProps, createNativeStackNavigator } from '@react-navig
 import { NavigatorScreenParams } from '@react-navigation/native';
 import { Main, Profile, Search } from '../screens/home';
 import { loginResp } from '../networking/resp-type';
+import { Setting } from '../screens/settings';
 
 
 
 export type RootStackParamList = {
     Profile: undefined,
     Main: { user: loginResp | undefined },
-    Search: { name: string }
+    Search: { name: string },
+    Setting: undefined
 }
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -20,6 +22,7 @@ export default function StackNavigator() {
             <Stack.Screen component={Profile} name="Profile" />
             <Stack.Screen component={Main} name='Main' />
             <Stack.Screen component={Search} name='Search' />
+            <Stack.Screen component={Setting} name='Setting' />
         </Stack.Navigator>
     )
 }

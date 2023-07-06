@@ -1,14 +1,11 @@
 import { NativeStackScreenProps, createNativeStackNavigator } from '@react-navigation/native-stack';
-import { NavigatorScreenParams } from '@react-navigation/native';
 import { Login, Otp } from '../screens/auth';
-import { Main, Profile } from '../screens/home';
-import { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { User } from '../screens/auth/login';
 
 
 export type RootStackParamList = {
     Login: undefined,
-    Otp: { callback: FirebaseAuthTypes.ConfirmationResult, mode: "Login" | "Signup", data: Partial<User> }
+    Otp: { mode: "Login" | "Signup", data: Partial<User> }
 }
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
