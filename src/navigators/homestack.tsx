@@ -7,7 +7,7 @@ import { Setting } from '../screens/settings';
 
 
 export type RootStackParamList = {
-    Profile: undefined,
+    Profile: {name:string},
     Main: { user: loginResp | undefined },
     Search: { name: string },
     Setting: undefined

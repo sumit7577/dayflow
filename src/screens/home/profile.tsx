@@ -35,8 +35,14 @@ type ProfileProps = userState & HomeStackProps<"Profile"> & {
   setUser: (arg0: loginResp) => void;
 }
 
+export function timeParser(time: string) {
+  const date = new Date(time);
+  const name = date.toLocaleTimeString('en-US', { hourCycle: "h12", hour: '2-digit', minute: '2-digit' })
+  return name
+}
+
 function Profile(props: ProfileProps) {
-  const { userData, navigation, setUser } = props;
+  const { userData, navigation, setUser, route } = props;
   const [userDetail, setUserDetail] = useMMKVString("user");
   const [daySelected, setDaySelected] = React.useState<typeof Dates>(Dates);
   const [profileData, setProfileData] = React.useState<Partial<loginResp>>({ working_time_start: new Date().toISOString(), working_time_end: new Date().toISOString() });
@@ -56,10 +62,13 @@ function Profile(props: ProfileProps) {
       return ApiController.pathchProfile(profileData, userData?.id!!, daySelected)
     },
     onSuccess: (data) => {
+      if (route.params.name === "auth") {
+        setUser(profileData)
+      }
       setUserDetail(JSON.stringify(data))
     }
   })
-  
+
   const { data, isLoading } = useQuery({
     queryKey: ['profile'],
     queryFn: ApiController.profile,
@@ -141,12 +150,17 @@ function Profile(props: ProfileProps) {
                 borderWidth: 2, borderColor: Theme.COLORS.THEME,
                 zIndex: 0,
                 height: Utils.height / 8, width: Utils.width / 4, borderRadius: 50,
-                bottom:"15%"
+                bottom: "15%"
               }}>
-                <AppIcon source={userData?.profile_picture ?? Pictures.authPictures.profile} imageStyle={{ borderRadius: 50, resizeMode: "contain" }} size={90} />
+                <AppIcon source={userData?.profile_picture ?? Pictures.authPictures.profile}
+                  imageStyle={{ borderRadius: 50, resizeMode: "contain", height: Utils.height / 8.5, width: Utils.width / 4.2 }} size={0} />
               </Block>
-              <Block style={{ paadingHorizontal: "4%"}}>
+              <Block style={{ paadingHorizontal: "4%" }}>
                 <MultiSelect
+                  canAddItems={true}
+                  onAddItem={(item)=>{
+                    console.log('item',item)
+                  }}
                   hideTags={false}
                   items={List.Proffession}
                   styleItemsContainer={{ maxHeight: Utils.height / 4, borderWidth: 2, borderColor: Theme.COLORS.MUTED, borderRadius: 8, marginVertical: "4%" }}
@@ -225,7 +239,7 @@ function Profile(props: ProfileProps) {
                   </Text>
                   <TouchableRipple onPress={() => { setOpen(!open) }}>
                     <Block row space='between' middle>
-                      <Text style={[styles.text, { fontSize: 10 }]}>{new Date(profileData?.working_time_start).toLocaleTimeString()}</Text>
+                      <Text style={[styles.text, { fontSize: 10 }]}>{timeParser(profileData?.working_time_start)}</Text>
                       <Block>
                         <AppIcon size={15} source={"menu-up"} />
                         <AppIcon size={15} source={"menu-down"} />
@@ -242,7 +256,7 @@ function Profile(props: ProfileProps) {
                   </Text>
                   <TouchableRipple onPress={() => { setOpenEnd(!openEnd) }}>
                     <Block row space='between' middle>
-                      <Text style={[styles.text, { fontSize: 10 }]}>{new Date(profileData.working_time_end).toLocaleTimeString()}</Text>
+                      <Text style={[styles.text, { fontSize: 10 }]}>{timeParser(profileData?.working_time_end)}</Text>
                       <Block>
                         <AppIcon size={15} source={"menu-up"} />
                         <AppIcon size={15} source={"menu-down"} />

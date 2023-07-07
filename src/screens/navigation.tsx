@@ -7,20 +7,24 @@ import { connect } from 'react-redux'
 import { loginResp } from '../networking/resp-type'
 import { AppAuthScreen, AppHomeScreen } from '../navigators'
 import { useMMKVString } from 'react-native-mmkv'
+import { AppNotification } from '../components'
+
 
 type AppProps = userState & {
     setUser: (arg0: loginResp) => void;
 }
 const Navigation: React.FC<AppProps> = ({ userData, isLoggedIn, setUser }) => {
     const [token, setToken] = useMMKVString("user.token");
-    const [userDetail,setUserDetail] = useMMKVString("user");
-    console.log('mounted',userDetail,token)
+    const [userDetail, setUserDetail] = useMMKVString("user");
+    const [schedule, setSchedule] = useMMKVString("schedule")
     React.useEffect(() => {
-        if(token && userDetail){
+        if (token && userDetail) {
             const userData = JSON.parse(userDetail);
             setUser(userData);
         }
-    }, [userDetail])
+        AppNotification.createNotification()
+
+    }, [])
     return (
         <NavigationContainer>
             {isLoggedIn ? <AppHomeScreen /> : <AppAuthScreen />}

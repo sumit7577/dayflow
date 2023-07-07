@@ -1,31 +1,80 @@
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native'
 import React, { useRef } from 'react'
-import { Pictures, Theme, Utils } from '../../constants'
+import { Database, Pictures, Theme, Utils } from '../../constants'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Block, Button } from 'galio-framework'
-import { AppDialogue, AppIcon, AppInput } from '../../components'
-import { TouchableRipple } from 'react-native-paper'
+import { AppDialogue, AppIcon, AppInput, AppNotification } from '../../components'
+import { TouchableRipple, configureFonts } from 'react-native-paper'
 import { getUserState, userState } from '../../context/user/reducer'
 import { HomeStackProps } from '../../navigators/homestack'
 import { loginResp } from '../../networking/resp-type'
 import { loginAction } from '../../context/user/action'
 import { connect } from 'react-redux'
 import { Slider } from '@miblanchard/react-native-slider';
+import { timeCreater } from '../../networking/controller'
+import { useMMKVObject, useMMKVString } from 'react-native-mmkv'
+import { timeParser } from './profile'
 
 type MainProps = userState & HomeStackProps<"Main"> & {
   setUser: (arg0: loginResp) => void;
 }
+function getDayName() {
+  var date = new Date();
+  const name = date.toLocaleDateString('en-US', { weekday: 'long' });
+  return name.split(",")[0]
+}
+
+export type schedule = Array<{ start: string, end: string, message: string, index: number }>
+
+const filterSchedule = (sch: schedule, index: number) => {
+  return sch?.findIndex((item, indexs) => item?.index === index)
+}
+
 function Main(prop: MainProps) {
   const { navigation, userData, setUser, route } = prop;
   const [search, setSearch] = React.useState<string>(null!!);
+  const [schedule, setSchedule] = useMMKVString("schedule");
+  const parsedSchedule: schedule = schedule && JSON.parse(schedule)
   const [selectedTime, setSelectedTime] = React.useState<number | null>(null);
   const [sliderValue, setSliderValue] = React.useState<Array<number> | null>(null);
+  const [scheduleMessage, setScheduleMessage] = React.useState<string>("");
   const user = route.params?.user;
-  const workingTable = Utils.timeToArray(null,null)
+  const workingTable = Utils.timeToArray(null, null)
   const [error, setError] = React.useState<boolean>(false);
 
   const onRequest = () => {
     setError(() => !error)
+  }
+
+  const creaetSchedule = (index: number) => {
+    let startMinute = ":00:00"
+    let lastMinute = ":00:00"
+    if (sliderValue !== null) {
+      const firstMinut = sliderValue[0].toFixed(0).length < 2 ? `0${sliderValue[0].toFixed(0)}` : sliderValue[0].toFixed(0);
+      const lastMinut = sliderValue[1].toFixed(0).length < 2 ? `0${sliderValue[1].toFixed(0)}` : sliderValue[1].toFixed(0);
+      startMinute = `:${firstMinut}:00`
+      lastMinute = `:${lastMinut}:00`
+    }
+    const startTime = workingTable[index].start.split(":")[0] + startMinute
+    const endTIme = lastMinute === ":00:00" ? workingTable[index].end.split(":")[0] + lastMinute : workingTable[index].start.split(":")[0] + lastMinute
+    const scheduleTImeStart = timeCreater(startTime)
+    const scheduleTImeEnd = timeCreater(endTIme)
+    const makeSchedule = { start: scheduleTImeStart.toISOString(), end: scheduleTImeEnd.toISOString(), message: scheduleMessage, index: index };
+    AppNotification.scheduleNotification(makeSchedule)
+    setSchedule(() => {
+      if (schedule) {
+        const oldSchedule: schedule = JSON.parse(schedule)
+        const isAvailable = filterSchedule(oldSchedule, index)
+        if (isAvailable != -1) {
+          oldSchedule[index] = makeSchedule
+        }
+        else {
+          oldSchedule.push(makeSchedule)
+        }
+        return JSON.stringify(oldSchedule)
+      }
+      return JSON.stringify([makeSchedule])
+    })
   }
   return (
     <SafeAreaView>
@@ -58,83 +107,109 @@ function Main(prop: MainProps) {
                   <Text style={[styles.text, {
                     color: Theme.COLORS.THEME,
                     padding: "2%"
-                  }]}>MONDAY</Text>
+                  }]}>{getDayName().toUpperCase()}</Text>
                 </Block>
 
-                <View style={{ maxHeight: Utils.height / 3 }}>
+                <View style={{ maxHeight: Utils.height / 1.8 }}>
                   <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
                     {workingTable?.map((item, index) => (
-                      <TouchableRipple key={index} style={{ marginVertical: "4%" }} onPress={() => { setSelectedTime(() => index) }}>
-                        <Block row key={index} space='around' middle style={{
-                          borderRadius: 24,
-                          backgroundColor: index == selectedTime ? Theme.COLORS.THEME : "#EAEAEA", padding: "3.5%"
+                      <>
+                        <TouchableRipple key={index} style={{ marginVertical: "4%" }} onPress={() => {
+                          if (index === selectedTime) {
+                            setSelectedTime(() => null)
+                          }
+                          else {
+                            setSelectedTime(() => index)
+                          }
                         }}>
-                          <Text style={[styles.text, {
-                            textAlign: "center",
-                            fontSize: 12,
-                            color: index == selectedTime ? Theme.COLORS.WHITE : Theme.COLORS.MUTED
-                          }]}>{item.start}</Text>
-                          <Text style={[styles.text, {
-                            textAlign: "center",
-                            fontSize: 12,
-                            color: index == selectedTime ? Theme.COLORS.WHITE : Theme.COLORS.MUTED
-                          }]}>
-                            -
-                          </Text>
-                          <Text style={[styles.text, {
-                            textAlign: "center",
-                            fontSize: 12,
-                            color: index == selectedTime ? Theme.COLORS.WHITE : Theme.COLORS.MUTED
-                          }]}>
-                            {item.end}
-                          </Text>
-                        </Block>
-                      </TouchableRipple>
+                          <Block row key={index} space='around' middle style={{
+                            borderRadius: 24,
+                            backgroundColor: index == selectedTime || schedule && filterSchedule(parsedSchedule, index) > -1 ?
+                              Theme.COLORS.THEME : "#EAEAEA", padding: "3.5%"
+                          }}>
+                            <Text style={[styles.text, {
+                              textAlign: "center",
+                              fontSize: 12,
+                              color: index == selectedTime || schedule && filterSchedule(parsedSchedule, index) > -1 ?
+                                Theme.COLORS.WHITE : Theme.COLORS.MUTED
+                            }]}>{filterSchedule(parsedSchedule, index) > -1 ? timeParser(parsedSchedule[filterSchedule(parsedSchedule, index)].start) : item.start}</Text>
+                            <Text style={[styles.text, {
+                              textAlign: "center",
+                              fontSize: 12,
+                              color: index == selectedTime || schedule && filterSchedule(parsedSchedule, index) > -1 ?
+                                Theme.COLORS.WHITE : Theme.COLORS.MUTED
+                            }]}>
+                              -
+                            </Text>
+                            <Text style={[styles.text, {
+                              textAlign: "center",
+                              fontSize: 12,
+                              color: index == selectedTime || schedule && filterSchedule(parsedSchedule, index) > -1 ? Theme.COLORS.WHITE : Theme.COLORS.MUTED
+                            }]}>
+                              {filterSchedule(parsedSchedule, index) > -1 ? timeParser(parsedSchedule[filterSchedule(parsedSchedule, index)].end) : item.end}
+                            </Text>
+                          </Block>
+                        </TouchableRipple>
+                        {schedule && filterSchedule(parsedSchedule, index) > -1 &&
+                          <Block middle style={{ paddingVertical: "4%",borderWidth:1,borderRadius:8,borderColor:Theme.COLORS.THEME }}>
+                            <Text style={[styles.text, { fontSize: 14 }]}>{parsedSchedule[filterSchedule(parsedSchedule, index)].message || "No Message"}</Text>
+                          </Block>}
+                        {selectedTime === index &&
+                          <Block style={{ marginTop: "6%" }}>
+                            <Slider
+                              minimumValue={1}
+                              maximumValue={59}
+                              value={sliderValue ? sliderValue : [1, 59]}
+                              onValueChange={value => {
+                                setSliderValue(() => value)
+                              }}
+                              renderAboveThumbComponent={(value, index) => {
+                                const frontPart = workingTable && workingTable[selectedTime]?.start.split(":")[0];
+                                const backPart = workingTable && workingTable[selectedTime]?.start.split(" ")[1]
+                                return (
+                                  <Text style={[styles.text, { fontSize: 12 }]}>{sliderValue && `${frontPart}:${sliderValue[value].toFixed(0)} ${backPart}`}</Text>
+                                )
+                              }}
+                            />
+                            <Block style={{ marginVertical: "4%" }}>
+                              <Block row space='between' style={{ paddingHorizontal: "4%", paddingVertical: "4%" }}>
+                                <Text style={{
+                                  ...Utils.text,
+                                  backgroundColor: Theme.COLORS.THEME, borderRadius: 24, paddingHorizontal: "5%",
+                                  color: Theme.COLORS.WHITE, fontSize: 14
+                                }}>FROM</Text>
+                                <Text style={{
+                                  ...Utils.text,
+                                  backgroundColor: Theme.COLORS.MUTED, borderRadius: 24, paddingHorizontal: "5%",
+                                  color: Theme.COLORS.WHITE, fontSize: 14
+                                }}>TO</Text>
+
+                                <TouchableRipple onPress={() => {
+                                  creaetSchedule(index)
+                                  setSelectedTime(() => null)
+                                }}
+                                  style={{ backgroundColor: Theme.COLORS.THEME, borderRadius: 24, paddingHorizontal: "5%" }}>
+                                  <AppIcon size={20} source={'check'} color={Theme.COLORS.WHITE} />
+                                </TouchableRipple>
+
+                              </Block>
+                              <AppInput placeholder="Write about your time (15 Words)" scrollEnabled={true}
+                                onChangeText={(text) => {
+                                  setScheduleMessage(() => text)
+                                }}
+                                multiline={true} numberOfLines={4} style={{
+                                  height: Utils.height / 8,
+                                  borderWidth: 2, borderColor: Theme.COLORS.THEME,
+                                }} textInputStyle={{ fontSize: 12 }} />
+                            </Block>
+                          </Block>
+                        }
+                      </>
                     ))}
                   </ScrollView>
                 </View>
-
-                <Block style={{ marginVertical: "4%" }}>
-                  {selectedTime &&
-                    <Block style={{ marginTop: "8%" }}>
-                      <Slider
-                        minimumValue={1}
-                        maximumValue={59}
-                        value={sliderValue ? sliderValue : [1, 59]}
-                        onValueChange={value => { setSliderValue(() => value) }}
-                        renderAboveThumbComponent={(value, index) => {
-                          const frontPart = workingTable && workingTable[selectedTime]?.start.split(":")[0];
-                          const backPart = workingTable && workingTable[selectedTime]?.start.split(" ")[1]
-                          return (
-                            <Text style={[styles.text, { fontSize: 12 }]}>{sliderValue && `${frontPart}:${sliderValue[value].toFixed(0)} ${backPart}`}</Text>
-                          )
-                        }}
-                      />
-                    </Block>}
-
-                  <Block row space='between' style={{ paddingHorizontal: "4%", paddingVertical: "4%" }}>
-                    <Text style={{
-                      ...Utils.text,
-                      backgroundColor: Theme.COLORS.THEME, borderRadius: 24, paddingHorizontal: "5%",
-                      color: Theme.COLORS.WHITE, fontSize: 14
-                    }}>FROM</Text>
-                    <Text style={{
-                      ...Utils.text,
-                      backgroundColor: Theme.COLORS.MUTED, borderRadius: 24, paddingHorizontal: "5%",
-                      color: Theme.COLORS.WHITE, fontSize: 14
-                    }}>TO</Text>
-                    <Block style={{ backgroundColor: Theme.COLORS.THEME, borderRadius: 24, paddingHorizontal: "5%" }}>
-                      <AppIcon size={20} source={'check'} color={Theme.COLORS.WHITE} />
-                    </Block>
-                  </Block>
-                  <AppInput placeholder="Write about your time (15 Words)" scrollEnabled={true}
-                    multiline={true} numberOfLines={4} style={{
-                      height: Utils.height / 8,
-                      borderWidth: 2, borderColor: Theme.COLORS.THEME,
-                    }} textInputStyle={{ fontSize: 12 }} />
-                </Block>
                 <Block middle>
-                  <Button round color={Theme.COLORS.THEME} style={{ width: Utils.width / 1.2 }} onPress={onRequest}>
+                  <Button round color={Theme.COLORS.THEME} style={{ width: Utils.width / 1.2,marginVertical:"4%" }} onPress={onRequest}>
                     <Text style={[styles.text, { color: Theme.COLORS.WHITE, fontSize: 14 }]}>REQUEST</Text>
                   </Button>
                 </Block>

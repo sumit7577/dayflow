@@ -46,10 +46,12 @@ function Settings(prop: settingProps) {
                 <View style={styles.body}>
                     <Block middle style={[styles.block, { paddingVertical: "8%" }]}>
                         <Button style={{ width: Utils.width / 1.3, marginVertical: "4%" }} onPress={() => {
-                            navigation.navigate("Profile")
+                            navigation.navigate("Profile",{
+                                name:"home"
+                            })
                         }}
                             color={Theme.COLORS.THEME} round>
-                            <Text style={styles.text}>Profile</Text>
+                            <Text style={styles.text}>PROFILE</Text>
                         </Button>
 
                         <Button style={{ width: Utils.width / 1.3, marginVertical: "4%" }} onPress={() => {

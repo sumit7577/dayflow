@@ -27,8 +27,8 @@ client.interceptors.response.use(
         return response;
     },
     (error) => {
-        //console.log("resp",error.response.data);
-        //console.log("error",error)
+        //console.log("resp", error.response.data);
+        //console.log("error", error)
         if (error.message === "Network Error") {
             return Promise.reject(new NetworkError('Please Turn On Your Mobile Data'));
         } else if (error.response.status >= 500) {
@@ -36,7 +36,7 @@ client.interceptors.response.use(
                 new ServerError(error.response.data.error, error.response.status)
             );
         } else if (error.response.status === 401) {
-            (()=>{
+            (() => {
                 Database.delete("user.token")
                 Database.delete("user")
             })()
@@ -44,7 +44,7 @@ client.interceptors.response.use(
         } else if (error.response.status >= 400 && error.response.status < 500) {
             return Promise.reject(
                 new ClientError(
-                    Object.entries(error.response.data).join(" ").replace(",", " "),
+                    Object.entries(error.response.data.user ? error.response.data.user : error.response.data).join(" ").replace(",", " "),
                     error.response.status
                 )
             );

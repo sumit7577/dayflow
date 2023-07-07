@@ -4,7 +4,7 @@ import { AuthStackProps } from '../../navigators/authstach'
 import { Utils, Pictures, Theme, Database } from '../../constants'
 import { Block, Button, Checkbox } from 'galio-framework'
 import { AppInput, AppDialogue, AppLoader } from '../../components'
-import { TouchableRipple } from 'react-native-paper'
+import { TouchableRipple, Snackbar } from 'react-native-paper'
 import { useMutation } from '@tanstack/react-query'
 import { ApiController } from '../../networking'
 
@@ -43,6 +43,8 @@ export interface User {
 export default function Login(props: LoginProps) {
   const { navigation } = props;
   const [mode, setMode] = React.useState<"Login" | "Signup">("Login");
+  const [loginError, setLoginError] = React.useState<boolean>(false);
+  const [signUpError, setSignUpError] = React.useState<boolean>(false);
   const [userData, setUserData] = React.useReducer((curr: User, update: Partial<User>): User => {
     const newEvent = { ...curr, ...update };
     if (newEvent.phone.length === 10) {
@@ -56,12 +58,16 @@ export default function Login(props: LoginProps) {
       return ApiController.login({ phone: userData.phone })
     },
     onSuccess: async (data) => {
+      setLoginError(() => false)
       if (data.success) {
         navigation.navigate("Otp", {
           mode: "Login",
           data: userData
         })
       }
+    },
+    onError: (data) => {
+      setLoginError(() => true)
     }
   })
 
@@ -71,14 +77,17 @@ export default function Login(props: LoginProps) {
 
     },
     onSuccess: async (data) => {
+      setSignUpError(() => false)
       navigation.navigate("Otp", {
         mode: "Signup",
         data: userData
       })
     },
     onError: (data: { name: string, message: string }) => {
+      setSignUpError(() => true)
       if (data.message.includes("exists")) {
         setMode("Login")
+
       }
     }
   })
@@ -92,8 +101,17 @@ export default function Login(props: LoginProps) {
   }
   return (
     <SafeAreaView>
+      <Snackbar duration={2000} visible={loginError} style={{ backgroundColor: Theme.COLORS.ERROR, zIndex: 20 }} onDismiss={() => {
+        setLoginError(() => false)
+      }}>
+        <Text style={[styles.text, { fontSize: 14, color: Theme.COLORS.WHITE }]}>{loginMutation?.error?.message}</Text>
+      </Snackbar>
+      <Snackbar duration={2000} visible={signUpError} style={{ backgroundColor: Theme.COLORS.ERROR, zIndex: 20 }} onDismiss={() => {
+        setSignUpError(() => false)
+      }}>
+        <Text style={[styles.text, { fontSize: 14, color: Theme.COLORS.WHITE }]}>{signUpMutation?.error?.message}</Text>
+      </Snackbar>
       <View style={styles.container}>
-        <AppDialogue show={loginMutation.isError || signUpMutation.isError} error={loginMutation.error || signUpMutation.error} />
         <AppLoader show={loginMutation.isLoading || signUpMutation.isLoading} />
         <View style={styles.header}>
           <Block middle>
@@ -166,7 +184,7 @@ const styles = StyleSheet.create({
 
   },
   header: {
-    marginTop:"8%"
+    marginTop: "8%"
   },
   body: {
     paddingHorizontal: "7%",

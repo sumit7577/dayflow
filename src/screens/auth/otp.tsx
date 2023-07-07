@@ -61,11 +61,9 @@ function Otp(props: OtpProps) {
     },
     onSuccess: async (data) => {
       Database.set("user.token", data.message);
-      const userData = await ApiController.profile();
-      if (userData[0].id) {
-        setUser(userData[0])
-        Database.set("user", JSON.stringify(userData[0]))
-      }
+      navigation.navigate("AuthProfile",{
+        name:"auth"
+      })
     }
   })
 
