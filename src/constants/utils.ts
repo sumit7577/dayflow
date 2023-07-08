@@ -57,13 +57,13 @@ const timeToArray = (start: string | null, end: string | null) => {
     for (let i = parseInt(starting); i <= parseInt(ending); i++) {
         if (i === parseInt(ending)) break;
         if (i > 12) {
-            dataArray.push({ start: `${i - 12}:00 PM`, end: `${(i + 1) - 12}:00 PM` })
+            dataArray.push({ start: `${i}:00:00 PM`, end: `${i+1}:00:00 PM` })
         }
         else if (i === 12) {
-            dataArray.push({ start: `${i}:00 AM`, end: `${(i + 1) - 12}:00 PM` })
+            dataArray.push({ start: `${i}:00:00 AM`, end: `${i+1}:00:00 PM` })
         }
         else {
-            dataArray.push({ start: `${i}:00 AM`, end: `${i + 1}:00 AM` })
+            dataArray.push({ start: `${i}:00:00 AM`, end: `${i + 1}:00:00 AM` })
         }
 
 

@@ -1,7 +1,4 @@
 import PushNotification, { Importance } from "react-native-push-notification";
-import { schedule } from "../screens/home/main";
-import { timeCreater } from "../networking/controller";
-
 /*PushNotification.configure({
     // (optional) Called when Token is generated (iOS and Android)
     onRegister: function (token: any) {
@@ -54,7 +51,7 @@ const scheduleNotification = (item: { start: string, end: string, message: strin
     PushNotification.localNotificationSchedule({
         channelId: "1",
         message: item?.message !== "" ? item.message : "You have some scheduled work", // (required)
-        date: new Date(timeCreater(item.start).toISOString()), // in 60 secs
+        date: new Date(item.start), // in 60 secs
         allowWhileIdle: true, // (optional) set notification to work while on doze, default: false
         repeatType: 'day',
         repeatTime: 1,
@@ -65,4 +62,15 @@ const scheduleNotification = (item: { start: string, end: string, message: strin
     });
 }
 
-export default { scheduleNotification, createNotification }
+const NotificationType = new Array<{
+    id: number,
+    date: Date,
+    title:string,
+    message:string,
+    soundName:string,
+    repeatInterval:number,
+    number:number,
+    data:AsyncGenerator
+}>
+
+export default { scheduleNotification, createNotification,NotificationType}

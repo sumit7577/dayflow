@@ -12,12 +12,14 @@ import { loginAction } from '../../context/user/action'
 import { connect } from 'react-redux'
 import { Slider } from '@miblanchard/react-native-slider';
 import { timeCreater } from '../../networking/controller'
-import { useMMKVObject, useMMKVString } from 'react-native-mmkv'
+import { useMMKVString } from 'react-native-mmkv'
 import { timeParser } from './profile'
+import PushNotification, { Importance } from "react-native-push-notification";
 
 type MainProps = userState & HomeStackProps<"Main"> & {
   setUser: (arg0: loginResp) => void;
 }
+
 function getDayName() {
   var date = new Date();
   const name = date.toLocaleDateString('en-US', { weekday: 'long' });
@@ -28,6 +30,22 @@ export type schedule = Array<{ start: string, end: string, message: string, inde
 
 const filterSchedule = (sch: schedule, index: number) => {
   return sch?.findIndex((item, indexs) => item?.index === index)
+}
+
+
+const secondParser = (time: string) => {
+  var timeComponents = time.split(":");
+  var hours = parseInt(timeComponents[0], 10);
+  var minutes = parseInt(timeComponents[1], 10);
+  var seconds = parseInt(timeComponents[2], 10);
+
+  // Create a new Date object with the current date and the parsed time components
+  var currentDate = new Date();
+  currentDate.setHours(hours);
+  currentDate.setMinutes(minutes);
+  currentDate.setSeconds(seconds);
+
+  return timeParser(currentDate.toISOString())
 }
 
 function Main(prop: MainProps) {
@@ -41,6 +59,13 @@ function Main(prop: MainProps) {
   const user = route.params?.user;
   const workingTable = Utils.timeToArray(null, null)
   const [error, setError] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    //PushNotification.cancelAllLocalNotifications()
+    PushNotification.getScheduledLocalNotifications((item: typeof AppNotification.NotificationType) => {
+      console.log("notificaition", item[0])
+    });
+  })
 
   const onRequest = () => {
     setError(() => !error)
@@ -65,8 +90,8 @@ function Main(prop: MainProps) {
       if (schedule) {
         const oldSchedule: schedule = JSON.parse(schedule)
         const isAvailable = filterSchedule(oldSchedule, index)
-        if (isAvailable != -1) {
-          oldSchedule[index] = makeSchedule
+        if (isAvailable !== -1) {
+          oldSchedule[isAvailable] = makeSchedule
         }
         else {
           oldSchedule.push(makeSchedule)
@@ -132,7 +157,7 @@ function Main(prop: MainProps) {
                               fontSize: 12,
                               color: index == selectedTime || schedule && filterSchedule(parsedSchedule, index) > -1 ?
                                 Theme.COLORS.WHITE : Theme.COLORS.MUTED
-                            }]}>{filterSchedule(parsedSchedule, index) > -1 ? timeParser(parsedSchedule[filterSchedule(parsedSchedule, index)].start) : item.start}</Text>
+                            }]}>{filterSchedule(parsedSchedule, index) > -1 ? timeParser(parsedSchedule[filterSchedule(parsedSchedule, index)].start) : secondParser(item.start)}</Text>
                             <Text style={[styles.text, {
                               textAlign: "center",
                               fontSize: 12,
@@ -146,12 +171,12 @@ function Main(prop: MainProps) {
                               fontSize: 12,
                               color: index == selectedTime || schedule && filterSchedule(parsedSchedule, index) > -1 ? Theme.COLORS.WHITE : Theme.COLORS.MUTED
                             }]}>
-                              {filterSchedule(parsedSchedule, index) > -1 ? timeParser(parsedSchedule[filterSchedule(parsedSchedule, index)].end) : item.end}
+                              {filterSchedule(parsedSchedule, index) > -1 ? timeParser(parsedSchedule[filterSchedule(parsedSchedule, index)].end) : secondParser(item.end)}
                             </Text>
                           </Block>
                         </TouchableRipple>
                         {schedule && filterSchedule(parsedSchedule, index) > -1 &&
-                          <Block middle style={{ paddingVertical: "4%",borderWidth:1,borderRadius:8,borderColor:Theme.COLORS.THEME }}>
+                          <Block middle style={{ paddingVertical: "4%", borderWidth: 1, borderRadius: 8, borderColor: Theme.COLORS.THEME }}>
                             <Text style={[styles.text, { fontSize: 14 }]}>{parsedSchedule[filterSchedule(parsedSchedule, index)].message || "No Message"}</Text>
                           </Block>}
                         {selectedTime === index &&
@@ -164,8 +189,8 @@ function Main(prop: MainProps) {
                                 setSliderValue(() => value)
                               }}
                               renderAboveThumbComponent={(value, index) => {
-                                const frontPart = workingTable && workingTable[selectedTime]?.start.split(":")[0];
-                                const backPart = workingTable && workingTable[selectedTime]?.start.split(" ")[1]
+                                const frontPart = workingTable && secondParser(workingTable[selectedTime]?.start).split(":")[0];
+                                const backPart = workingTable && secondParser(workingTable[selectedTime]?.start).split(" ")[1]
                                 return (
                                   <Text style={[styles.text, { fontSize: 12 }]}>{sliderValue && `${frontPart}:${sliderValue[value].toFixed(0)} ${backPart}`}</Text>
                                 )
@@ -209,7 +234,7 @@ function Main(prop: MainProps) {
                   </ScrollView>
                 </View>
                 <Block middle>
-                  <Button round color={Theme.COLORS.THEME} style={{ width: Utils.width / 1.2,marginVertical:"4%" }} onPress={onRequest}>
+                  <Button round color={Theme.COLORS.THEME} style={{ width: Utils.width / 1.2, marginVertical: "4%" }} onPress={onRequest}>
                     <Text style={[styles.text, { color: Theme.COLORS.WHITE, fontSize: 14 }]}>REQUEST</Text>
                   </Button>
                 </Block>

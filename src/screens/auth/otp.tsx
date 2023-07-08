@@ -34,7 +34,7 @@ function Otp(props: OtpProps) {
   const [otpData6, setOtpData6] = useState('');
   const [minutes, setMinutes] = useState(1);
   const [seconds, setSeconds] = useState(59);
-  
+
   React.useEffect(() => {
     const interval = setInterval(() => {
       if (seconds > 0) {
@@ -61,9 +61,15 @@ function Otp(props: OtpProps) {
     },
     onSuccess: async (data) => {
       Database.set("user.token", data.message);
-      navigation.navigate("AuthProfile",{
-        name:"auth"
-      })
+      if (route.params.mode === "Signup") {
+        navigation.navigate("AuthProfile", {
+          name: "auth"
+        })
+      }
+      else{
+        const response = await ApiController.profile();
+        setUser(response[0])
+      }
     }
   })
 
