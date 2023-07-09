@@ -9,7 +9,7 @@
     "start": "react-native start",
     "test": "jest",
     "bundle": "react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res/",
-    "build": "rm -rf ./android/app/src/main/res/drawable-* && rm -rf ./android/app/src/main/res/raw/node_modules_galioframework_src_fonts_galio.ttf && cd android && chmod 777 ./gradlew && ./gradlew assembleDebug"
+    "build": "rm -rf ./android/app/src/main/res/drawable-* && rm -rf ./android/app/src/main/res/raw/node_modules_galioframework_src_fonts_galio.ttf && cd android && chmod 777 ./gradlew && ./gradlew assembleRelease"
   },
   "dependencies": {
     "@miblanchard/react-native-slider": "^2.3.1",

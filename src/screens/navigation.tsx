@@ -22,7 +22,6 @@ const Navigation: React.FC<AppProps> = ({ userData, isLoggedIn, setUser }) => {
             const userData = JSON.parse(userDetail);
             setUser(userData);
         }
-        AppNotification.createNotification()
 
     }, [])
     return (

@@ -66,9 +66,10 @@ function Otp(props: OtpProps) {
           name: "auth"
         })
       }
-      else{
+      else {
         const response = await ApiController.profile();
         setUser(response[0])
+        Database.set("user", JSON.stringify(response[0]))
       }
     }
   })
