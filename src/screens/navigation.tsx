@@ -16,7 +16,6 @@ type AppProps = userState & {
 const Navigation: React.FC<AppProps> = ({ userData, isLoggedIn, setUser }) => {
     const [token, setToken] = useMMKVString("user.token");
     const [userDetail, setUserDetail] = useMMKVString("user");
-    console.log("mounted",userDetail)
     const [schedule, setSchedule] = useMMKVString("schedule")
     React.useEffect(() => {
         if (token && userDetail) {

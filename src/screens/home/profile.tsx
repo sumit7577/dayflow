@@ -152,17 +152,18 @@ function Profile(props: ProfileProps) {
 
           <View style={styles.body}>
 
-            <Block style={[styles.block, { paddingVertical: "6%", paddingHorizontal: "4%" }]}>
+            <Block style={[styles.block, { paddingVertical: "6%", paddingHorizontal: "4%",marginTop:"10%" }]}>
               <Block center style={{
                 borderWidth: 2, borderColor: Theme.COLORS.THEME,
-                zIndex: 0,
+                zIndex: 10,
                 height: Utils.height / 8, width: Utils.width / 4, borderRadius: 50,
-                bottom: "15%"
+                position: "absolute",
+                top: "-15%",
               }}>
                 <AppIcon source={userData?.profile_picture ?? Pictures.authPictures.profile}
                   imageStyle={{ borderRadius: 50, resizeMode: "contain", height: Utils.height / 8.5, width: Utils.width / 4.2 }} size={0} />
               </Block>
-              <Block style={{ paadingHorizontal: "4%" }}>
+              <Block style={{ paadingHorizontal: "4%", marginTop: Utils.height/10 }}>
                 <MultiSelect
                   canAddItems={true}
                   onAddItem={(item) => {

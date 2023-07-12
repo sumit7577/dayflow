@@ -22,6 +22,7 @@ function Settings(prop: settingProps) {
         logoutUser()
         Database.delete("user.token")
         Database.delete("user")
+        Database.delete("schedule")
     }
     return (
         <SafeAreaView>

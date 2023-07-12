@@ -65,12 +65,12 @@ const scheduleNotification = (item: { start: string, end: string, message: strin
 const NotificationType = new Array<{
     id: number,
     date: Date,
-    title:string,
-    message:string,
-    soundName:string,
-    repeatInterval:number,
-    number:number,
-    data:AsyncGenerator
+    title: string,
+    message: string,
+    soundName: string,
+    repeatInterval: number,
+    number: number,
+    data: AsyncGenerator
 }>
 
-export default { scheduleNotification, createNotification,NotificationType}
+export default { scheduleNotification, createNotification, NotificationType }

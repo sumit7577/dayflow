@@ -33,6 +33,14 @@ const filterSchedule = (sch: schedule, index: number) => {
   return sch?.findIndex((item, indexs) => item?.index === index)
 }
 
+const shortSchedule = (schedules: schedule): schedule => {
+  return schedules.sort((prev, next) => {
+    const prevs = new Date(prev.start)
+    const nexts = new Date(next.start)
+    return prevs - nexts
+  })
+}
+
 
 const secondParser = (time: string) => {
   var timeComponents = time.split(":");
@@ -59,34 +67,31 @@ function Main(prop: MainProps) {
   const { navigation, userData, setUser, route } = prop;
   const [search, setSearch] = React.useState<string>(null!!);
   const [schedule, setSchedule] = useMMKVString("schedule");
-  const parsedSchedule: schedule = schedule && JSON.parse(schedule)
+  const parsedSchedule: schedule = schedule && shortSchedule(JSON.parse(schedule))
   const [selectedTime, setSelectedTime] = React.useState<number | null>(null);
   const [sliderValue, setSliderValue] = React.useState<Array<number> | null>(null);
   const [scheduleMessage, setScheduleMessage] = React.useState<string>("");
   const user = route.params?.user;
   const workingTable = user ? Utils.timeToArray(null, null) : Utils.timeToArray(userData?.working_time_start, userData?.working_time_end)
   const [error, setError] = React.useState<boolean>(false);
-  console.log(workingTable)
+
   React.useEffect(() => {
-    //PushNotification.cancelAllLocalNotifications()
     PushNotification.getScheduledLocalNotifications((item: typeof AppNotification.NotificationType) => {
-      console.log("notificaition", item[0])
+      //console.log(item)
     });
+
+    if (schedule) {
+      const day = new Date(parsedSchedule[0].start).getDate()
+      const currDate = new Date().getDate()
+      if (currDate > day) {
+        Database.delete("schedule")
+        PushNotification.cancelAllLocalNotifications()
+      }
+    }
+    if (!schedule) {
+      setSchedule(() => JSON.stringify(workingTable));
+    }
   }, [])
-
-
-  React.useEffect(() => {
-    workingTable?.forEach((item, index) => {
-      parsedSchedule?.forEach(items => {
-        const start = timeParser24(items.start)
-        const upperStart = item.start.split(" ")[0]
-        if (start.split(":")[0] == upperStart.split(":")[0] && parseInt(upperStart.split(":")[1]) < parseInt(start.split(":")[1])) {
-          workingTable.splice(index, 0, items)
-          console.log(workingTable)
-        }
-      })
-    })
-  }, [schedule])
 
 
   const onRequest = () => {
@@ -102,20 +107,20 @@ function Main(prop: MainProps) {
       startMinute = `:${firstMinut}:00`
       lastMinute = `:${lastMinut}:00`
     }
-    const startTime = workingTable[index].start.split(":")[0] + startMinute
-    const endTIme = lastMinute === ":00:00" ? workingTable[index].end.split(":")[0] + lastMinute : workingTable[index].start.split(":")[0] + lastMinute
+    const startTime = timeParser(parsedSchedule[index].start).split(":")[0] + startMinute
+    const endTIme = lastMinute === ":00:00" ? timeParser(parsedSchedule[index].end).split(":")[0] + lastMinute : timeParser(parsedSchedule[index].start).split(":")[0] + lastMinute
     const scheduleTImeStart = timeCreater(startTime)
     const scheduleTImeEnd = timeCreater(endTIme)
     const makeSchedule = { start: scheduleTImeStart.toISOString(), end: scheduleTImeEnd.toISOString(), message: scheduleMessage, index: index };
-    AppNotification.scheduleNotification(makeSchedule)
+    setScheduleMessage("")
     setSchedule(() => {
       if (schedule) {
-        const oldSchedule: schedule = JSON.parse(schedule)
-        const isAvailable = filterSchedule(oldSchedule, index)
-        if (isAvailable !== -1) {
-          oldSchedule[isAvailable] = makeSchedule
+        const oldSchedule: schedule = shortSchedule(JSON.parse(schedule))
+        if (oldSchedule[index].index) {
+          oldSchedule[index] = makeSchedule
         }
         else {
+          AppNotification.scheduleNotification(makeSchedule)
           oldSchedule.push(makeSchedule)
         }
         return JSON.stringify(oldSchedule)
@@ -159,7 +164,7 @@ function Main(prop: MainProps) {
 
                 <View style={{ maxHeight: Utils.height / 1.8 }}>
                   <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
-                    {workingTable?.map((item, index) => (
+                    {parsedSchedule?.map((item, index) => (
                       <>
                         <TouchableRipple key={index} style={{ marginVertical: "4%" }} onPress={() => {
                           if (index === selectedTime) {
@@ -171,19 +176,19 @@ function Main(prop: MainProps) {
                         }}>
                           <Block row key={index} space='around' middle style={{
                             borderRadius: 24,
-                            backgroundColor: index == selectedTime ?
+                            backgroundColor: index == selectedTime || item.index ?
                               Theme.COLORS.THEME : "#EAEAEA", padding: "3.5%"
                           }}>
                             <Text style={[styles.text, {
                               textAlign: "center",
                               fontSize: 12,
-                              color: index == selectedTime ?
+                              color: index == selectedTime || item.index ?
                                 Theme.COLORS.WHITE : Theme.COLORS.MUTED
                             }]}>{timeParser(item.start)}</Text>
                             <Text style={[styles.text, {
                               textAlign: "center",
                               fontSize: 12,
-                              color: index == selectedTime ?
+                              color: index == selectedTime || item.index ?
                                 Theme.COLORS.WHITE : Theme.COLORS.MUTED
                             }]}>
                               -
@@ -191,24 +196,16 @@ function Main(prop: MainProps) {
                             <Text style={[styles.text, {
                               textAlign: "center",
                               fontSize: 12,
-                              color: index == selectedTime ? Theme.COLORS.WHITE : Theme.COLORS.MUTED
+                              color: index == selectedTime || item.index ? Theme.COLORS.WHITE : Theme.COLORS.MUTED
                             }]}>
                               {timeParser(item.end)}
                             </Text>
                           </Block>
                         </TouchableRipple>
-                        {parsedSchedule?.map((items, index) => {
-                          const start = timeParser24(items.start)
-                          const upperStart = timeParser24(item.start)
-                          if (start.split(":")[0] == upperStart.split(":")[0] && parseInt(upperStart.split(":")[1]) < parseInt(start.split(":")[1])) {
-                            return (
-                              <Text>i am text</Text>
-                            )
-                          }
-                          else {
-                            return <Text>bihh</Text>
-                          }
-                        })}
+                        {item.index &&
+                          <Block middle style={{ paddingVertical: "4%", borderWidth: 1, borderRadius: 8, borderColor: Theme.COLORS.THEME }}>
+                            <Text style={[styles.text, { fontSize: 14 }]}>{item.message || "No Message"}</Text>
+                          </Block>}
                         {selectedTime === index &&
                           <Block style={{ marginTop: "6%" }}>
                             <Slider
@@ -219,8 +216,8 @@ function Main(prop: MainProps) {
                                 setSliderValue(() => value)
                               }}
                               renderAboveThumbComponent={(value, index) => {
-                                const frontPart = workingTable && secondParser(workingTable[selectedTime]?.start).split(":")[0];
-                                const backPart = workingTable && secondParser(workingTable[selectedTime]?.start).split(" ")[1]
+                                const frontPart = timeParser(parsedSchedule[selectedTime].start).split(":")[0]
+                                const backPart = timeParser(parsedSchedule[selectedTime]?.start).split(" ")[1]
                                 return (
                                   <Text style={[styles.text, { fontSize: 12 }]}>{sliderValue && `${frontPart}:${sliderValue[value].toFixed(0)} ${backPart}`}</Text>
                                 )
