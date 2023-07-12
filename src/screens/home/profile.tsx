@@ -1,10 +1,11 @@
-import { View, Text, StyleSheet, ScrollView, Image } from 'react-native'
-import React from 'react'
+import { View, Text, StyleSheet, ScrollView, Image, LogBox } from 'react-native'
+import React, { useRef } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Block, Button } from 'galio-framework'
 import { Database, Pictures, Theme, Utils } from '../../constants'
 import { TouchableRipple } from 'react-native-paper'
 import _ from 'lodash';
+import reject from "lodash/reject";
 import MultiSelect from 'react-native-multiple-select'
 import { AppDialogue, AppIcon, AppInput, AppLoader } from '../../components'
 import DatePicker from 'react-native-date-picker'
@@ -45,8 +46,7 @@ function Profile(props: ProfileProps) {
   const { userData, navigation, setUser, route } = props;
   const [userDetail, setUserDetail] = useMMKVString("user");
   const [daySelected, setDaySelected] = React.useState<typeof Dates>(Dates);
-  const [profileData, setProfileData] = React.useState<Partial<loginResp>>({ working_time_start: new Date().toISOString(), working_time_end: new Date().toISOString() });
-
+  const [profileData, setProfileData] = React.useState<Partial<loginResp>>({ working_time_start: timeCreater("8:00:00").toISOString(), working_time_end: timeCreater("17:00:00").toISOString() });
   const selectProffession = (items: Array<string>) => {
     setProfileData((prev) => ({ ...prev, proffession: items }))
   }
@@ -62,9 +62,7 @@ function Profile(props: ProfileProps) {
       return ApiController.pathchProfile(profileData, userData?.id!!, daySelected)
     },
     onSuccess: (data) => {
-      if (route.params.name === "auth") {
-        setUser(profileData)
-      }
+      setUser(data)
       setUserDetail(JSON.stringify(data))
     }
   })
@@ -80,8 +78,14 @@ function Profile(props: ProfileProps) {
       if (response.working_time_start?.length > 1) {
         response.working_time_start = timeCreater(response.working_time_start).toISOString()
       }
+      else {
+        response.working_time_start = timeCreater("8:00:00").toISOString()
+      }
       if (response.working_time_end?.length > 1) {
         response.working_time_end = timeCreater(response.working_time_end).toISOString()
+      }
+      else {
+        response.working_time_end = timeCreater("17:00:00").toISOString()
       }
       if (response.working_days?.length > 1) {
         setDaySelected(response.working_days)
@@ -93,13 +97,16 @@ function Profile(props: ProfileProps) {
         response.interest = []
       }
       setProfileData(response)
-      setUserDetail(JSON.stringify(response))
+      setUserDetail(JSON.stringify(data[0]))
     }
   })
 
   const submit = () => {
     patchProfile.mutate()
   }
+  React.useEffect(() => {
+    LogBox.ignoreLogs(["VirtualizedLists should never be nested"])
+  }, [])
   return (
     <SafeAreaView>
       <AppDialogue show={patchProfile.isError} error={patchProfile.error} />
@@ -158,10 +165,10 @@ function Profile(props: ProfileProps) {
               <Block style={{ paadingHorizontal: "4%" }}>
                 <MultiSelect
                   canAddItems={true}
-                  onAddItem={(item)=>{
-                    console.log('item',item)
+                  onAddItem={(item) => {
+                    selectProffession(item)
                   }}
-                  hideTags={false}
+                  hideTags={true}
                   items={List.Proffession}
                   styleItemsContainer={{ maxHeight: Utils.height / 4, borderWidth: 2, borderColor: Theme.COLORS.MUTED, borderRadius: 8, marginVertical: "4%" }}
                   uniqueKey='name'
@@ -188,6 +195,31 @@ function Profile(props: ProfileProps) {
                   submitButtonColor={Theme.COLORS.THEME}
                   submitButtonText="Submit"
                 />
+                <Block>
+                  {_.map(_.chunk(profileData?.proffession, 2), (element: string, index: number) => (
+                    <Block row style={{ maxWidth: Utils.width / 1.3, flexWrap: 'wrap' }}>
+                      {_.map(element, (item: string, i: number) => (
+                        <Block style={[styles.selectedItem, { padding: "4%" }]} row>
+                          <Text style={[styles.text, {
+                            color: Theme.COLORS.MUTED, fontFamily: Theme.FONTFAMILY.REGULAR,
+                            fontSize: 14, padding: 2
+                          }]}>{item}</Text>
+                          <TouchableRipple onPress={() => {
+                            const newItems = reject(profileData?.proffession,
+                              singleItem => singleItem === item);
+
+                            setProfileData((prev) => {
+                              return { ...prev, proffession: newItems }
+                            })
+                          }}>
+                            <AppIcon size={20} source={'close-circle'} color={Theme.COLORS.ERROR} />
+                          </TouchableRipple>
+                        </Block>
+
+                      ))}
+                    </Block>
+                  ))}
+                </Block>
               </Block>
 
             </Block>
@@ -273,7 +305,11 @@ function Profile(props: ProfileProps) {
 
             <Block style={[styles.block, { paddingVertical: "6%", paddingHorizontal: "4%" }]}>
               <MultiSelect
-                hideTags={false}
+                hideTags={true}
+                canAddItems={true}
+                onAddItem={(item) => {
+                  selecteInterest(item)
+                }}
                 items={List.Interest}
                 styleItemsContainer={{ maxHeight: Utils.height / 4, borderWidth: 2, borderColor: Theme.COLORS.MUTED, borderRadius: 8, marginVertical: "4%" }}
                 uniqueKey='name'
@@ -300,6 +336,31 @@ function Profile(props: ProfileProps) {
                 submitButtonColor={Theme.COLORS.THEME}
                 submitButtonText="Submit"
               />
+              <Block>
+                {_.map(_.chunk(profileData?.interest, 3), (element: string, index: number) => (
+                  <Block row style={{ maxWidth: Utils.width / 1.3, flexWrap: 'wrap' }}>
+                    {_.map(element, (item: string, i: number) => (
+                      <Block style={[styles.selectedItem, { padding: "4%" }]} row>
+                        <Text style={[styles.text, {
+                          color: Theme.COLORS.MUTED, fontFamily: Theme.FONTFAMILY.REGULAR,
+                          fontSize: 14, padding: 2
+                        }]}>{item}</Text>
+                        <TouchableRipple onPress={() => {
+                          const newItems = reject(profileData?.interest,
+                            singleItem => singleItem === item);
+
+                          setProfileData((prev) => {
+                            return { ...prev, interest: newItems }
+                          })
+                        }}>
+                          <AppIcon size={20} source={'close-circle'} color={Theme.COLORS.ERROR} />
+                        </TouchableRipple>
+                      </Block>
+
+                    ))}
+                  </Block>
+                ))}
+              </Block>
             </Block>
 
             <Block style={styles.block}>
@@ -355,7 +416,20 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     elevation: 4,
     marginVertical: "4%",
+  },
+  selectedItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingLeft: 15,
+    paddingTop: 3,
+    paddingRight: 3,
+    paddingBottom: 3,
+    margin: 3,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: Theme.COLORS.MUTED
   }
+
 })
 
 const mapStateToProps = (state: userState) => {

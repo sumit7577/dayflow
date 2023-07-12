@@ -1,5 +1,6 @@
 import { Dimensions, StyleProp, StyleSheet, TextStyle, ViewStyle } from "react-native";
 import Theme from "./theme";
+import { timeCreater } from "../networking/controller";
 
 const { height, width } = Dimensions.get("window");
 
@@ -50,23 +51,13 @@ export function humanReadableDuration(msDuration: number): string {
 
 }
 
-const timeToArray = (start: string | null, end: string | null) => {
+const timeToArray = (start: string | null | undefined, end: string | null | undefined) => {
     const starting = start !== null && typeof start == 'string' ? start.split(":")[0] : "8";
     const ending = end !== null && typeof end == 'string' ? end.split(":")[0] : "18"
     const dataArray = [];
     for (let i = parseInt(starting); i <= parseInt(ending); i++) {
         if (i === parseInt(ending)) break;
-        if (i > 12) {
-            dataArray.push({ start: `${i}:00:00 PM`, end: `${i+1}:00:00 PM` })
-        }
-        else if (i === 12) {
-            dataArray.push({ start: `${i}:00:00 AM`, end: `${i+1}:00:00 PM` })
-        }
-        else {
-            dataArray.push({ start: `${i}:00:00 AM`, end: `${i + 1}:00:00 AM` })
-        }
-
-
+        dataArray.push({ start: timeCreater(`${i}:00:00`).toISOString(), end: timeCreater(`${i + 1}:00:00`).toISOString() })
     }
     return dataArray;
 }

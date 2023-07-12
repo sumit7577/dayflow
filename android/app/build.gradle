@@ -69,6 +69,9 @@ def enableProguardInReleaseBuilds = true
 def jscFlavor = 'org.webkit:android-jsc:+'
 
 android {
+    lintOptions { 
+      checkReleaseBuilds false 
+    }
     ndkVersion rootProject.ext.ndkVersion
 
     compileSdkVersion rootProject.ext.compileSdkVersion
@@ -88,6 +91,12 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release{
+            storeFile file("dayflow.keystore")
+            storePassword "idontknow@1"
+            keyAlias "dayflow"
+            keyPassword "idontknow@1"
+        }
     }
     buildTypes {
         debug {
@@ -96,7 +105,7 @@ android {
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }

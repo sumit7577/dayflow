@@ -4,7 +4,7 @@ import { Database, Pictures, Theme, Utils } from '../../constants'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Block, Button } from 'galio-framework'
 import { AppDialogue, AppIcon, AppInput, AppNotification } from '../../components'
-import { TouchableRipple, configureFonts } from 'react-native-paper'
+import { TouchableRipple } from 'react-native-paper'
 import { getUserState, userState } from '../../context/user/reducer'
 import { HomeStackProps } from '../../navigators/homestack'
 import { loginResp } from '../../networking/resp-type'
@@ -15,6 +15,7 @@ import { timeCreater } from '../../networking/controller'
 import { useMMKVString } from 'react-native-mmkv'
 import { timeParser } from './profile'
 import PushNotification, { Importance } from "react-native-push-notification";
+import { find } from 'lodash'
 
 type MainProps = userState & HomeStackProps<"Main"> & {
   setUser: (arg0: loginResp) => void;
@@ -48,6 +49,12 @@ const secondParser = (time: string) => {
   return timeParser(currentDate.toISOString())
 }
 
+function timeParser24(time: string) {
+  const date = new Date(time);
+  const name = date.toLocaleTimeString('en-US', { hourCycle: "h24", hour: '2-digit', minute: '2-digit', second: "2-digit" })
+  return name
+}
+
 function Main(prop: MainProps) {
   const { navigation, userData, setUser, route } = prop;
   const [search, setSearch] = React.useState<string>(null!!);
@@ -57,15 +64,30 @@ function Main(prop: MainProps) {
   const [sliderValue, setSliderValue] = React.useState<Array<number> | null>(null);
   const [scheduleMessage, setScheduleMessage] = React.useState<string>("");
   const user = route.params?.user;
-  const workingTable = Utils.timeToArray(null, null)
+  const workingTable = user ? Utils.timeToArray(null, null) : Utils.timeToArray(userData?.working_time_start, userData?.working_time_end)
   const [error, setError] = React.useState<boolean>(false);
-
+  console.log(workingTable)
   React.useEffect(() => {
     //PushNotification.cancelAllLocalNotifications()
     PushNotification.getScheduledLocalNotifications((item: typeof AppNotification.NotificationType) => {
       console.log("notificaition", item[0])
     });
-  })
+  }, [])
+
+
+  React.useEffect(() => {
+    workingTable?.forEach((item, index) => {
+      parsedSchedule?.forEach(items => {
+        const start = timeParser24(items.start)
+        const upperStart = item.start.split(" ")[0]
+        if (start.split(":")[0] == upperStart.split(":")[0] && parseInt(upperStart.split(":")[1]) < parseInt(start.split(":")[1])) {
+          workingTable.splice(index, 0, items)
+          console.log(workingTable)
+        }
+      })
+    })
+  }, [schedule])
+
 
   const onRequest = () => {
     setError(() => !error)
@@ -149,19 +171,19 @@ function Main(prop: MainProps) {
                         }}>
                           <Block row key={index} space='around' middle style={{
                             borderRadius: 24,
-                            backgroundColor: index == selectedTime || schedule && filterSchedule(parsedSchedule, index) > -1 ?
+                            backgroundColor: index == selectedTime ?
                               Theme.COLORS.THEME : "#EAEAEA", padding: "3.5%"
                           }}>
                             <Text style={[styles.text, {
                               textAlign: "center",
                               fontSize: 12,
-                              color: index == selectedTime || schedule && filterSchedule(parsedSchedule, index) > -1 ?
+                              color: index == selectedTime ?
                                 Theme.COLORS.WHITE : Theme.COLORS.MUTED
-                            }]}>{filterSchedule(parsedSchedule, index) > -1 ? timeParser(parsedSchedule[filterSchedule(parsedSchedule, index)].start) : secondParser(item.start)}</Text>
+                            }]}>{timeParser(item.start)}</Text>
                             <Text style={[styles.text, {
                               textAlign: "center",
                               fontSize: 12,
-                              color: index == selectedTime || schedule && filterSchedule(parsedSchedule, index) > -1 ?
+                              color: index == selectedTime ?
                                 Theme.COLORS.WHITE : Theme.COLORS.MUTED
                             }]}>
                               -
@@ -169,16 +191,24 @@ function Main(prop: MainProps) {
                             <Text style={[styles.text, {
                               textAlign: "center",
                               fontSize: 12,
-                              color: index == selectedTime || schedule && filterSchedule(parsedSchedule, index) > -1 ? Theme.COLORS.WHITE : Theme.COLORS.MUTED
+                              color: index == selectedTime ? Theme.COLORS.WHITE : Theme.COLORS.MUTED
                             }]}>
-                              {filterSchedule(parsedSchedule, index) > -1 ? timeParser(parsedSchedule[filterSchedule(parsedSchedule, index)].end) : secondParser(item.end)}
+                              {timeParser(item.end)}
                             </Text>
                           </Block>
                         </TouchableRipple>
-                        {schedule && filterSchedule(parsedSchedule, index) > -1 &&
-                          <Block middle style={{ paddingVertical: "4%", borderWidth: 1, borderRadius: 8, borderColor: Theme.COLORS.THEME }}>
-                            <Text style={[styles.text, { fontSize: 14 }]}>{parsedSchedule[filterSchedule(parsedSchedule, index)].message || "No Message"}</Text>
-                          </Block>}
+                        {parsedSchedule?.map((items, index) => {
+                          const start = timeParser24(items.start)
+                          const upperStart = timeParser24(item.start)
+                          if (start.split(":")[0] == upperStart.split(":")[0] && parseInt(upperStart.split(":")[1]) < parseInt(start.split(":")[1])) {
+                            return (
+                              <Text>i am text</Text>
+                            )
+                          }
+                          else {
+                            return <Text>bihh</Text>
+                          }
+                        })}
                         {selectedTime === index &&
                           <Block style={{ marginTop: "6%" }}>
                             <Slider
@@ -247,14 +277,14 @@ function Main(prop: MainProps) {
           <View style={styles.footer}>
             <Block style={styles.block} row space='between'>
               <Block>
-                <Block middle style={{ backgroundColor: Theme.COLORS.THEME, borderRadius: 24, padding: "10%" }}>
+                <Block middle style={styles.buttons}>
                   <AppIcon source={"bell"} size={24} color={Theme.COLORS.WHITE} />
                 </Block>
                 <Text style={[styles.text, { textAlign: "center", fontSize: 12, color: Theme.COLORS.THEME }]}>NOTIFICATION</Text>
               </Block>
 
               <Block>
-                <Block middle style={{ backgroundColor: Theme.COLORS.THEME, borderRadius: 24, padding: "10%" }}>
+                <Block middle style={styles.buttons}>
                   <AppIcon source={"account"} size={24} color={Theme.COLORS.WHITE} />
                 </Block>
                 <Text style={[styles.text, { textAlign: "center", fontSize: 12, color: Theme.COLORS.THEME }]}>REQUESTS</Text>
@@ -262,7 +292,7 @@ function Main(prop: MainProps) {
 
               <Block>
                 <TouchableRipple onPress={() => { navigation.navigate('Setting') }}>
-                  <Block middle style={{ backgroundColor: Theme.COLORS.THEME, borderRadius: 24, padding: "10%" }}>
+                  <Block middle style={styles.buttons}>
                     <AppIcon source={"cog"} size={24} color={Theme.COLORS.WHITE} />
                   </Block>
                 </TouchableRipple>
@@ -301,6 +331,11 @@ const styles = StyleSheet.create({
     marginVertical: "4%",
     paddingHorizontal: "4%",
     paddingVertical: "4%"
+  },
+  buttons: {
+    backgroundColor: Theme.COLORS.THEME,
+    borderRadius: 24,
+    padding: "10%"
   }
 })
 
