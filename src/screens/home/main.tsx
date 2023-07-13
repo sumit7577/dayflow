@@ -34,7 +34,7 @@ const filterSchedule = (sch: schedule, index: number) => {
 }
 
 const shortSchedule = (schedules: schedule): schedule => {
-  return schedules.sort((prev, next) => {
+  return schedules?.sort((prev, next) => {
     const prevs = new Date(prev.start)
     const nexts = new Date(next.start)
     return prevs - nexts
