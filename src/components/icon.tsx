@@ -13,7 +13,7 @@ import {
   ImageStyle,
   ImageProps
 } from 'react-native';
-import { Theme } from '../constants';
+import { Pictures, Theme } from '../constants';
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 
 type IconSourceBase = string | ImageSourcePropType;
@@ -42,6 +42,9 @@ const isImageSource = (source: any) =>
     source.includes("http")) ||
   // source is a module, e.g. - require('image')
   typeof source === 'number' ||
+
+  typeof source === "string" &&
+  source.includes("file") ||
   // image url on web
   (Platform.OS === 'web' &&
     typeof source === 'string' &&
@@ -60,7 +63,7 @@ const Icon = ({
   const iconColor =
     color || Theme.COLORS.BLACK
 
-  const s = typeof source == "string" && source.includes("http") ? { uri: source } : source;
+  const s = typeof source == "string" && (source.includes("http") || source?.includes("file")) ? { uri: source } : source;
 
   if (isImageSource(source)) {
     return (

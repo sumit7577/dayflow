@@ -1,9 +1,9 @@
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native'
-import React, { useRef } from 'react'
+import React, { useMemo, useRef } from 'react'
 import { Database, Pictures, Theme, Utils } from '../../constants'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Block, Button } from 'galio-framework'
-import { AppDialogue, AppIcon, AppInput, AppNotification } from '../../components'
+import { AppDialogue, AppIcon, AppInput, AppNotification, AppSchedule } from '../../components'
 import { TouchableRipple } from 'react-native-paper'
 import { getUserState, userState } from '../../context/user/reducer'
 import { HomeStackProps } from '../../navigators/homestack'
@@ -67,7 +67,7 @@ function Main(prop: MainProps) {
   const { navigation, userData, setUser, route } = prop;
   const [search, setSearch] = React.useState<string>(null!!);
   const [schedule, setSchedule] = useMMKVString("schedule");
-  const parsedSchedule: schedule = schedule && shortSchedule(JSON.parse(schedule))
+  const parsedSchedule: schedule = schedule && JSON.parse(schedule)
   const [selectedTime, setSelectedTime] = React.useState<number | null>(null);
   const [sliderValue, setSliderValue] = React.useState<Array<number> | null>(null);
   const [scheduleMessage, setScheduleMessage] = React.useState<string>("");
@@ -80,17 +80,14 @@ function Main(prop: MainProps) {
       //console.log(item)
     });
 
-    if (schedule) {
+    /*if (schedule) {
       const day = new Date(parsedSchedule[0].start).getDate()
       const currDate = new Date().getDate()
       if (currDate > day) {
         Database.delete("schedule")
         PushNotification.cancelAllLocalNotifications()
       }
-    }
-    if (!schedule) {
-      setSchedule(() => JSON.stringify(workingTable));
-    }
+    }*/
   }, [])
 
 
@@ -107,22 +104,17 @@ function Main(prop: MainProps) {
       startMinute = `:${firstMinut}:00`
       lastMinute = `:${lastMinut}:00`
     }
-    const startTime = timeParser(parsedSchedule[index].start).split(":")[0] + startMinute
-    const endTIme = lastMinute === ":00:00" ? timeParser(parsedSchedule[index].end).split(":")[0] + lastMinute : timeParser(parsedSchedule[index].start).split(":")[0] + lastMinute
+    const startTime = timeParser24(workingTable[index].start).split(":")[0] + startMinute
+    const endTIme = lastMinute === ":00:00" ? timeParser24(workingTable[index].end).split(":")[0] + lastMinute : timeParser24(workingTable[index].start).split(":")[0] + lastMinute
     const scheduleTImeStart = timeCreater(startTime)
     const scheduleTImeEnd = timeCreater(endTIme)
     const makeSchedule = { start: scheduleTImeStart.toISOString(), end: scheduleTImeEnd.toISOString(), message: scheduleMessage, index: index };
+    AppNotification.scheduleNotification(makeSchedule)
     setScheduleMessage("")
     setSchedule(() => {
       if (schedule) {
-        const oldSchedule: schedule = shortSchedule(JSON.parse(schedule))
-        if (oldSchedule[index].index) {
-          oldSchedule[index] = makeSchedule
-        }
-        else {
-          AppNotification.scheduleNotification(makeSchedule)
-          oldSchedule.push(makeSchedule)
-        }
+        const oldSchedule: schedule = JSON.parse(schedule)
+        oldSchedule.push(makeSchedule)
         return JSON.stringify(oldSchedule)
       }
       return JSON.stringify([makeSchedule])
@@ -164,7 +156,7 @@ function Main(prop: MainProps) {
 
                 <View style={{ maxHeight: Utils.height / 1.8 }}>
                   <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
-                    {parsedSchedule?.map((item, index) => (
+                    {workingTable?.map((item, index) => (
                       <>
                         <TouchableRipple key={index} style={{ marginVertical: "4%" }} onPress={() => {
                           if (index === selectedTime) {
@@ -176,19 +168,19 @@ function Main(prop: MainProps) {
                         }}>
                           <Block row key={index} space='around' middle style={{
                             borderRadius: 24,
-                            backgroundColor: index == selectedTime || item.index ?
+                            backgroundColor: index == selectedTime ?
                               Theme.COLORS.THEME : "#EAEAEA", padding: "3.5%"
                           }}>
                             <Text style={[styles.text, {
                               textAlign: "center",
                               fontSize: 12,
-                              color: index == selectedTime || item.index ?
+                              color: index == selectedTime ?
                                 Theme.COLORS.WHITE : Theme.COLORS.MUTED
                             }]}>{timeParser(item.start)}</Text>
                             <Text style={[styles.text, {
                               textAlign: "center",
                               fontSize: 12,
-                              color: index == selectedTime || item.index ?
+                              color: index == selectedTime ?
                                 Theme.COLORS.WHITE : Theme.COLORS.MUTED
                             }]}>
                               -
@@ -196,16 +188,13 @@ function Main(prop: MainProps) {
                             <Text style={[styles.text, {
                               textAlign: "center",
                               fontSize: 12,
-                              color: index == selectedTime || item.index ? Theme.COLORS.WHITE : Theme.COLORS.MUTED
+                              color: index == selectedTime ? Theme.COLORS.WHITE : Theme.COLORS.MUTED
                             }]}>
                               {timeParser(item.end)}
                             </Text>
                           </Block>
                         </TouchableRipple>
-                        {item.index &&
-                          <Block middle style={{ paddingVertical: "4%", borderWidth: 1, borderRadius: 8, borderColor: Theme.COLORS.THEME }}>
-                            <Text style={[styles.text, { fontSize: 14 }]}>{item.message || "No Message"}</Text>
-                          </Block>}
+
                         {selectedTime === index &&
                           <Block style={{ marginTop: "6%" }}>
                             <Slider
@@ -216,8 +205,8 @@ function Main(prop: MainProps) {
                                 setSliderValue(() => value)
                               }}
                               renderAboveThumbComponent={(value, index) => {
-                                const frontPart = timeParser(parsedSchedule[selectedTime].start).split(":")[0]
-                                const backPart = timeParser(parsedSchedule[selectedTime]?.start).split(" ")[1]
+                                const frontPart = timeParser(workingTable[selectedTime].start).split(":")[0]
+                                const backPart = timeParser(workingTable[selectedTime]?.start).split(" ")[1]
                                 return (
                                   <Text style={[styles.text, { fontSize: 12 }]}>{sliderValue && `${frontPart}:${sliderValue[value].toFixed(0)} ${backPart}`}</Text>
                                 )
@@ -256,6 +245,14 @@ function Main(prop: MainProps) {
                             </Block>
                           </Block>
                         }
+                        {parsedSchedule?.map((chidItem, index) => {
+                          const time = timeParser24(chidItem.start).split(":")[0]
+                          const upperTime = timeParser24(item.start).split(":")[0]
+                          if (time == upperTime) {
+                            return <AppSchedule item={chidItem} index={index} selected={selectedTime} />
+                          }
+                          return null;
+                        })}
                       </>
                     ))}
                   </ScrollView>

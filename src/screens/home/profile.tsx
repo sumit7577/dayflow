@@ -19,6 +19,7 @@ import { loginAction } from '../../context/user/action'
 import { connect } from 'react-redux'
 import { timeCreater } from '../../networking/controller'
 import { useMMKVString } from 'react-native-mmkv'
+import { launchImageLibrary } from 'react-native-image-picker'
 
 
 export const Dates = [
@@ -67,6 +68,23 @@ function Profile(props: ProfileProps) {
     }
   })
 
+  const openCamera = async () => {
+    const selectedImage = await launchImageLibrary({ mediaType: "photo", selectionLimit: 2 });
+    setProfileData((prev: any) => {
+      if (selectedImage.assets && selectedImage.assets.length > 0) {
+        return {
+          ...prev, profile_picture: {
+            uri: selectedImage.assets[0].uri,
+            type: selectedImage.assets[0].type, name: selectedImage.assets[0].fileName
+          }
+        }
+      }
+      else {
+        return { ...prev }
+      }
+    })
+  }
+
   const { data, isLoading } = useQuery({
     queryKey: ['profile'],
     queryFn: ApiController.profile,
@@ -74,7 +92,6 @@ function Profile(props: ProfileProps) {
       const response = { ...data[0] };
       delete response.id;
       delete response.user;
-      delete response.profile_picture;
       if (response.working_time_start?.length > 1) {
         response.working_time_start = timeCreater(response.working_time_start).toISOString()
       }
@@ -107,6 +124,7 @@ function Profile(props: ProfileProps) {
   React.useEffect(() => {
     LogBox.ignoreLogs(["VirtualizedLists should never be nested"])
   }, [])
+  console.log(profileData)
   return (
     <SafeAreaView>
       <AppDialogue show={patchProfile.isError} error={patchProfile.error} />
@@ -152,18 +170,29 @@ function Profile(props: ProfileProps) {
 
           <View style={styles.body}>
 
-            <Block style={[styles.block, { paddingVertical: "6%", paddingHorizontal: "4%",marginTop:"10%" }]}>
-              <Block center style={{
-                borderWidth: 2, borderColor: Theme.COLORS.THEME,
-                zIndex: 10,
-                height: Utils.height / 8, width: Utils.width / 4, borderRadius: 50,
-                position: "absolute",
-                top: "-15%",
-              }}>
-                <AppIcon source={userData?.profile_picture ?? Pictures.authPictures.profile}
-                  imageStyle={{ borderRadius: 50, resizeMode: "contain", height: Utils.height / 8.5, width: Utils.width / 4.2 }} size={0} />
+            <Block style={[styles.block, { paddingVertical: "6%", paddingHorizontal: "4%", marginTop: "10%" }]}>
+              <Block center style={{ position: "absolute", top: "-15%" }}>
+                <TouchableRipple onPress={openCamera} style={{
+                  borderWidth: 2, borderColor: Theme.COLORS.THEME,
+                  height: Utils.height / 8, width: Utils.width / 4, borderRadius: 50,
+                  alignItems: "center"
+                }}>
+                  <AppIcon defaultSource={Pictures.authPictures.profile} source={profileData?.profile_picture?.uri ?? profileData?.profile_picture ?? Pictures.authPictures.profile}
+                    imageStyle={{ height: Utils.height / 8.4, width: Utils.width / 4.2, resizeMode: "contain", borderRadius: 50 }} size={0} />
+
+                </TouchableRipple>
+                <Block middle style={{
+                  position: "absolute", bottom: 5, right: 0,
+                  borderRadius: 50,
+                  padding: "3%",
+                  backgroundColor: Theme.COLORS.THEME
+                }}>
+                  <AppIcon color={Theme.COLORS.WHITE} size={20} source='pencil-outline' />
+
+                </Block>
               </Block>
-              <Block style={{ paadingHorizontal: "4%", marginTop: Utils.height/10 }}>
+
+              <Block style={{ paadingHorizontal: "4%", marginTop: "20%" }}>
                 <MultiSelect
                   canAddItems={true}
                   onAddItem={(item) => {
@@ -347,8 +376,7 @@ function Profile(props: ProfileProps) {
                           fontSize: 14, padding: 2
                         }]}>{item}</Text>
                         <TouchableRipple onPress={() => {
-                          const newItems = reject(profileData?.interest,
-                            singleItem => singleItem === item);
+                          const newItems = reject(profileData?.interest, singleItem => singleItem === item);
 
                           setProfileData((prev) => {
                             return { ...prev, interest: newItems }

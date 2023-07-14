@@ -6,7 +6,10 @@ const userResp = {
     },
     "phone": "",
     "proffession": new Array<string>,
-    'profile_picture': "",
+    'profile_picture': "string" || {
+        uri: "",
+        type: "", name: ""
+    },
     "interest": new Array<string>,
     'working_days': new Array<{
         name: string;
