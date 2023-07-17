@@ -3,8 +3,8 @@ import React, { useMemo, useRef } from 'react'
 import { Database, Pictures, Theme, Utils } from '../../constants'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Block, Button } from 'galio-framework'
-import { AppDialogue, AppIcon, AppInput, AppNotification, AppSchedule } from '../../components'
-import { TouchableRipple } from 'react-native-paper'
+import { AppDialogue, AppIcon, AppInput, AppNotification, AppSchedule, AppSnackBar } from '../../components'
+import { TouchableRipple, Snackbar } from 'react-native-paper'
 import { getUserState, userState } from '../../context/user/reducer'
 import { HomeStackProps } from '../../navigators/homestack'
 import { loginResp } from '../../networking/resp-type'
@@ -33,10 +33,10 @@ const filterSchedule = (sch: schedule, index: number) => {
   return sch?.findIndex((item, indexs) => item?.index === index)
 }
 
-const shortSchedule = (schedules: schedule): schedule => {
+export const shortSchedule = (schedules: schedule): schedule => {
   return schedules?.sort((prev, next) => {
-    const prevs = new Date(prev.start)
-    const nexts = new Date(next.start)
+    const prevs = new Date(prev.end)
+    const nexts = new Date(next.end)
     return prevs - nexts
   })
 }
@@ -67,27 +67,28 @@ function Main(prop: MainProps) {
   const { navigation, userData, setUser, route } = prop;
   const [search, setSearch] = React.useState<string>(null!!);
   const [schedule, setSchedule] = useMMKVString("schedule");
-  const parsedSchedule: schedule = schedule && JSON.parse(schedule)
+  const parsedSchedule: schedule = schedule && shortSchedule(JSON.parse(schedule))
   const [selectedTime, setSelectedTime] = React.useState<number | null>(null);
   const [sliderValue, setSliderValue] = React.useState<Array<number> | null>(null);
   const [scheduleMessage, setScheduleMessage] = React.useState<string>("");
   const user = route.params?.user;
   const workingTable = user ? Utils.timeToArray(null, null) : Utils.timeToArray(userData?.working_time_start, userData?.working_time_end)
   const [error, setError] = React.useState<boolean>(false);
+  const [timeError, setTimeError] = React.useState<boolean>(false);
 
   React.useEffect(() => {
     PushNotification.getScheduledLocalNotifications((item: typeof AppNotification.NotificationType) => {
       //console.log(item)
     });
 
-    /*if (schedule) {
+    if (schedule) {
       const day = new Date(parsedSchedule[0].start).getDate()
       const currDate = new Date().getDate()
       if (currDate > day) {
         Database.delete("schedule")
         PushNotification.cancelAllLocalNotifications()
       }
-    }*/
+    }
   }, [])
 
 
@@ -108,25 +109,38 @@ function Main(prop: MainProps) {
     const endTIme = lastMinute === ":00:00" ? timeParser24(workingTable[index].end).split(":")[0] + lastMinute : timeParser24(workingTable[index].start).split(":")[0] + lastMinute
     const scheduleTImeStart = timeCreater(startTime)
     const scheduleTImeEnd = timeCreater(endTIme)
-    const makeSchedule = { start: scheduleTImeStart.toISOString(), end: scheduleTImeEnd.toISOString(), message: scheduleMessage, index: index };
-    AppNotification.scheduleNotification(makeSchedule)
-    setScheduleMessage("")
-    setSchedule(() => {
-      if (schedule) {
-        const oldSchedule: schedule = JSON.parse(schedule)
-        oldSchedule.push(makeSchedule)
-        return JSON.stringify(oldSchedule)
-      }
-      return JSON.stringify([makeSchedule])
-    })
+
+    if ((scheduleTImeEnd.getMinutes() - scheduleTImeStart.getMinutes()) >= 15) {
+      const makeSchedule = { start: scheduleTImeStart.toISOString(), end: scheduleTImeEnd.toISOString(), message: scheduleMessage, index: index };
+      AppNotification.scheduleNotification(makeSchedule)
+      setScheduleMessage("")
+      setSchedule(() => {
+        if (schedule) {
+          const oldSchedule: schedule = shortSchedule(JSON.parse(schedule))
+          oldSchedule.push(makeSchedule)
+          return JSON.stringify(oldSchedule)
+        }
+        return JSON.stringify([makeSchedule])
+      })
+    }
+    else {
+      setTimeError(() => !timeError)
+    }
+
   }
   return (
     <SafeAreaView>
+      <Snackbar duration={2000} visible={timeError} style={{ backgroundColor: Theme.COLORS.ERROR, zIndex: 20 }} onDismiss={() => {
+        setTimeError(() => false)
+      }}>
+        <Text style={[styles.text, { fontSize: 14, color: Theme.COLORS.WHITE }]}>Time must should between 15 minutes</Text>
+      </Snackbar>
       <ScrollView showsVerticalScrollIndicator={false}>
         <AppDialogue show={error} error={{
           name: 'Coming Soon!',
           message: 'This Feature will arrive on 20th july'
         }} onSuccess={() => setError(() => !error)} />
+
         <View style={styles.container}>
           <View style={styles.header}>
             <Block style={styles.block}>
@@ -139,7 +153,13 @@ function Main(prop: MainProps) {
                   setError(() => true)
                 }} />
               <Block style={{ borderWidth: 2, borderRadius: 50, borderColor: Theme.COLORS.THEME }}>
-                <AppIcon source={user?.profile_picture ?? Pictures.authPictures.profile} size={50} imageStyle={{ resizeMode: "contain", borderRadius: 50 }} />
+                <TouchableRipple onPress={() => {
+                  navigation.navigate("Profile", {
+                    name: "home"
+                  })
+                }}>
+                  <AppIcon source={user?.profile_picture ?? userData?.profile_picture ?? Pictures.authPictures.profile} size={50} imageStyle={{ resizeMode: "contain", borderRadius: 50 }} />
+                </TouchableRipple>
               </Block>
             </Block>
           </View>
@@ -198,6 +218,7 @@ function Main(prop: MainProps) {
                         {selectedTime === index &&
                           <Block style={{ marginTop: "6%" }}>
                             <Slider
+                              containerStyle={{ marginHorizontal: "8%" }}
                               minimumValue={1}
                               maximumValue={59}
                               value={sliderValue ? sliderValue : [1, 59]}
@@ -213,27 +234,6 @@ function Main(prop: MainProps) {
                               }}
                             />
                             <Block style={{ marginVertical: "4%" }}>
-                              <Block row space='between' style={{ paddingHorizontal: "4%", paddingVertical: "4%" }}>
-                                <Text style={{
-                                  ...Utils.text,
-                                  backgroundColor: Theme.COLORS.THEME, borderRadius: 24, paddingHorizontal: "5%",
-                                  color: Theme.COLORS.WHITE, fontSize: 14
-                                }}>FROM</Text>
-                                <Text style={{
-                                  ...Utils.text,
-                                  backgroundColor: Theme.COLORS.MUTED, borderRadius: 24, paddingHorizontal: "5%",
-                                  color: Theme.COLORS.WHITE, fontSize: 14
-                                }}>TO</Text>
-
-                                <TouchableRipple onPress={() => {
-                                  creaetSchedule(index)
-                                  setSelectedTime(() => null)
-                                }}
-                                  style={{ backgroundColor: Theme.COLORS.THEME, borderRadius: 24, paddingHorizontal: "5%" }}>
-                                  <AppIcon size={20} source={'check'} color={Theme.COLORS.WHITE} />
-                                </TouchableRipple>
-
-                              </Block>
                               <AppInput placeholder="Write about your time (15 Words)" scrollEnabled={true}
                                 onChangeText={(text) => {
                                   setScheduleMessage(() => text)
@@ -242,6 +242,15 @@ function Main(prop: MainProps) {
                                   height: Utils.height / 8,
                                   borderWidth: 2, borderColor: Theme.COLORS.THEME,
                                 }} textInputStyle={{ fontSize: 12 }} />
+
+                              <TouchableRipple onPress={() => {
+                                creaetSchedule(index)
+                                setSelectedTime(() => null)
+                              }}
+                                style={{ backgroundColor: Theme.COLORS.THEME, borderRadius: 24, paddingHorizontal: "5%", position: "absolute", bottom: 0, alignItems: "center" }}>
+                                <AppIcon size={20} source={'check'} color={Theme.COLORS.WHITE} />
+                              </TouchableRipple>
+
                             </Block>
                           </Block>
                         }
@@ -249,7 +258,7 @@ function Main(prop: MainProps) {
                           const time = timeParser24(chidItem.start).split(":")[0]
                           const upperTime = timeParser24(item.start).split(":")[0]
                           if (time == upperTime) {
-                            return <AppSchedule item={chidItem} index={index} selected={selectedTime} />
+                            return <AppSchedule item={chidItem} index={index} selected={selectedTime} setError={setTimeError} />
                           }
                           return null;
                         })}

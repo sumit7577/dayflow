@@ -20,9 +20,9 @@ export default function Snackbars(prop: snackbarProps) {
         }
     }, [show])
     return (
-        <Snackbar visible={hide} style={{ zIndex: 20, backgroundColor: Theme.COLORS.ERROR }}
+        <Snackbar duration={2000} visible={hide} style={{ zIndex: 20, backgroundColor: Theme.COLORS.ERROR }}
             onDismiss={() => { setHide(() => !hide) }}>
-            <Text style={[{ ...Utils.text, ...Utils.textWhite, fontSize: 14 }]}>{message}</Text>
+            <Text style={[{ ...Utils.text, ...Utils.textWhite, fontSize: 14 }]}>{message ?? "Oops! There is some error."}</Text>
         </Snackbar>
     )
 }

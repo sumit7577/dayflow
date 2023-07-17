@@ -124,7 +124,6 @@ function Profile(props: ProfileProps) {
   React.useEffect(() => {
     LogBox.ignoreLogs(["VirtualizedLists should never be nested"])
   }, [])
-  console.log(profileData)
   return (
     <SafeAreaView>
       <AppDialogue show={patchProfile.isError} error={patchProfile.error} />
@@ -177,7 +176,7 @@ function Profile(props: ProfileProps) {
                   height: Utils.height / 8, width: Utils.width / 4, borderRadius: 50,
                   alignItems: "center"
                 }}>
-                  <AppIcon defaultSource={Pictures.authPictures.profile} source={profileData?.profile_picture?.uri ?? profileData?.profile_picture ?? Pictures.authPictures.profile}
+                  <AppIcon source={profileData?.profile_picture?.uri ?? profileData?.profile_picture ?? Pictures.authPictures.profile}
                     imageStyle={{ height: Utils.height / 8.4, width: Utils.width / 4.2, resizeMode: "contain", borderRadius: 50 }} size={0} />
 
                 </TouchableRipple>
@@ -192,7 +191,7 @@ function Profile(props: ProfileProps) {
                 </Block>
               </Block>
 
-              <Block style={{ paadingHorizontal: "4%", marginTop: "20%" }}>
+              <Block style={{ paadingHorizontal: "4%", marginTop: "25%" }}>
                 <MultiSelect
                   canAddItems={true}
                   onAddItem={(item) => {

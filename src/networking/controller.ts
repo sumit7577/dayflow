@@ -36,7 +36,6 @@ const signup = async (input: Partial<Omit<loginResp, "id">>): Promise<loginResp>
 
 const pathchProfile = async (input: Partial<loginResp>, id: number, working_days: typeof Dates): Promise<loginResp> => {
     const formInput = { ...input, working_days: working_days };
-    console.log(formInput.proffession, "patch")
     const formData = new FormData();
     Object.keys(formInput).map((item: keyof loginResp) => {
         if (item === "profile_picture") return;
