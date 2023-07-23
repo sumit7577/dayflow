@@ -29,8 +29,8 @@ function getDayName() {
 
 export type schedule = Array<{ start: string, end: string, message: string, index: number }>
 
-const filterSchedule = (sch: schedule, index: number) => {
-  return sch?.findIndex((item, indexs) => item?.index === index)
+const filterSchedule = (sch: schedule, items: { start: string, end: string }) => {
+  return sch?.findIndex((item, indexs) => timeParser24(item.start).split(":")[0] === timeParser24(items.start).split(":")[0])
 }
 
 export const shortSchedule = (schedules: schedule): schedule => {
@@ -77,12 +77,12 @@ function Main(prop: MainProps) {
   const [timeError, setTimeError] = React.useState<boolean>(false);
 
   React.useEffect(() => {
+    AppNotification.createNotification()
     PushNotification.getScheduledLocalNotifications((item: typeof AppNotification.NotificationType) => {
-      //console.log(item)
+      //console.log("items",item)
     });
-
     if (schedule) {
-      const day = new Date(parsedSchedule[0].start).getDate()
+      const day = new Date(parsedSchedule[0]?.start).getDate()
       const currDate = new Date().getDate()
       if (currDate > day) {
         Database.delete("schedule")
@@ -106,26 +106,21 @@ function Main(prop: MainProps) {
       lastMinute = `:${lastMinut}:00`
     }
     const startTime = timeParser24(workingTable[index].start).split(":")[0] + startMinute
-    const endTIme = lastMinute === ":00:00" ? timeParser24(workingTable[index].end).split(":")[0] + lastMinute : timeParser24(workingTable[index].start).split(":")[0] + lastMinute
+    const endTIme = lastMinute === ":60:00" ? timeParser24(workingTable[index].end).split(":")[0] + ":00:00" : timeParser24(workingTable[index].start).split(":")[0] + lastMinute
     const scheduleTImeStart = timeCreater(startTime)
     const scheduleTImeEnd = timeCreater(endTIme)
 
-    if ((scheduleTImeEnd.getMinutes() - scheduleTImeStart.getMinutes()) >= 15) {
-      const makeSchedule = { start: scheduleTImeStart.toISOString(), end: scheduleTImeEnd.toISOString(), message: scheduleMessage, index: index };
-      AppNotification.scheduleNotification(makeSchedule)
-      setScheduleMessage("")
-      setSchedule(() => {
-        if (schedule) {
-          const oldSchedule: schedule = shortSchedule(JSON.parse(schedule))
-          oldSchedule.push(makeSchedule)
-          return JSON.stringify(oldSchedule)
-        }
-        return JSON.stringify([makeSchedule])
-      })
-    }
-    else {
-      setTimeError(() => !timeError)
-    }
+    const makeSchedule = { start: scheduleTImeStart.toISOString(), end: scheduleTImeEnd.toISOString(), message: scheduleMessage, index: index };
+    AppNotification.scheduleNotification(makeSchedule)
+    setScheduleMessage("")
+    setSchedule(() => {
+      if (schedule) {
+        const oldSchedule: schedule = shortSchedule(JSON.parse(schedule))
+        oldSchedule.push(makeSchedule)
+        return JSON.stringify(oldSchedule)
+      }
+      return JSON.stringify([makeSchedule])
+    })
 
   }
   return (
@@ -178,58 +173,64 @@ function Main(prop: MainProps) {
                   <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
                     {workingTable?.map((item, index) => (
                       <>
-                        <TouchableRipple key={index} style={{ marginVertical: "4%" }} onPress={() => {
-                          if (index === selectedTime) {
-                            setSelectedTime(() => null)
-                          }
-                          else {
-                            setSelectedTime(() => index)
-                          }
-                        }}>
-                          <Block row key={index} space='around' middle style={{
-                            borderRadius: 24,
-                            backgroundColor: index == selectedTime ?
-                              Theme.COLORS.THEME : "#EAEAEA", padding: "3.5%"
+                        {filterSchedule(parsedSchedule, item) == -1 ?
+                          <TouchableRipple key={index} style={{ marginVertical: "4%" }} onPress={() => {
+                            if (index === selectedTime) {
+                              setSelectedTime(() => null)
+                            }
+                            else {
+                              setSelectedTime(() => index)
+                            }
                           }}>
-                            <Text style={[styles.text, {
-                              textAlign: "center",
-                              fontSize: 12,
-                              color: index == selectedTime ?
-                                Theme.COLORS.WHITE : Theme.COLORS.MUTED
-                            }]}>{timeParser(item.start)}</Text>
-                            <Text style={[styles.text, {
-                              textAlign: "center",
-                              fontSize: 12,
-                              color: index == selectedTime ?
-                                Theme.COLORS.WHITE : Theme.COLORS.MUTED
-                            }]}>
-                              -
-                            </Text>
-                            <Text style={[styles.text, {
-                              textAlign: "center",
-                              fontSize: 12,
-                              color: index == selectedTime ? Theme.COLORS.WHITE : Theme.COLORS.MUTED
-                            }]}>
-                              {timeParser(item.end)}
-                            </Text>
-                          </Block>
-                        </TouchableRipple>
+                            <Block row key={index} space='around' middle style={{
+                              borderRadius: 24,
+                              backgroundColor: index == selectedTime ?
+                                Theme.COLORS.THEME : "#EAEAEA", padding: "3.5%"
+                            }}>
+                              <Text style={[styles.text, {
+                                textAlign: "center",
+                                fontSize: 12,
+                                color: index == selectedTime ?
+                                  Theme.COLORS.WHITE : Theme.COLORS.MUTED
+                              }]}>{timeParser(item.start)}</Text>
+                              <Text style={[styles.text, {
+                                textAlign: "center",
+                                fontSize: 12,
+                                color: index == selectedTime ?
+                                  Theme.COLORS.WHITE : Theme.COLORS.MUTED
+                              }]}>
+                                -
+                              </Text>
+                              <Text style={[styles.text, {
+                                textAlign: "center",
+                                fontSize: 12,
+                                color: index == selectedTime ? Theme.COLORS.WHITE : Theme.COLORS.MUTED
+                              }]}>
+                                {timeParser(item.end)}
+                              </Text>
+                            </Block>
+                          </TouchableRipple>
+                          : null}
 
                         {selectedTime === index &&
                           <Block style={{ marginTop: "6%" }}>
                             <Slider
                               containerStyle={{ marginHorizontal: "8%" }}
-                              minimumValue={1}
-                              maximumValue={59}
-                              value={sliderValue ? sliderValue : [1, 59]}
+                              minimumValue={0}
+                              maximumValue={60}
+                              step={15}
+                              value={sliderValue ? sliderValue : [0, 60]}
                               onValueChange={value => {
                                 setSliderValue(() => value)
                               }}
                               renderAboveThumbComponent={(value, index) => {
-                                const frontPart = timeParser(workingTable[selectedTime].start).split(":")[0]
+                                let time = sliderValue && timeParser(workingTable[selectedTime].start).split(":")[0] + `:${sliderValue[value].toFixed(0)}`
+                                if (sliderValue && parseInt(sliderValue[value].toFixed(0)) == 60) {
+                                  time = timeParser(workingTable[selectedTime].end).split(":")[0] + `:0`
+                                }
                                 const backPart = timeParser(workingTable[selectedTime]?.start).split(" ")[1]
                                 return (
-                                  <Text style={[styles.text, { fontSize: 12 }]}>{sliderValue && `${frontPart}:${sliderValue[value].toFixed(0)} ${backPart}`}</Text>
+                                  <Text style={[styles.text, { fontSize: 12 }]}>{sliderValue && `${time} ${backPart}`}</Text>
                                 )
                               }}
                             />
@@ -254,11 +255,11 @@ function Main(prop: MainProps) {
                             </Block>
                           </Block>
                         }
-                        {parsedSchedule?.map((chidItem, index) => {
+                        {parsedSchedule?.map((chidItem, indexs) => {
                           const time = timeParser24(chidItem.start).split(":")[0]
                           const upperTime = timeParser24(item.start).split(":")[0]
                           if (time == upperTime) {
-                            return <AppSchedule item={chidItem} index={index} selected={selectedTime} setError={setTimeError} />
+                            return <AppSchedule item={chidItem} index={indexs} upperIndex={index} selected={selectedTime!!} setError={setTimeError} workingTable={workingTable} />
                           }
                           return null;
                         })}

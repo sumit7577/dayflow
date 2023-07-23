@@ -41,6 +41,7 @@ const createNotification = () => {
             channelDescription: "A channel to Schedule Notifications", // (optional) default: undefined.
             importance: Importance.HIGH,
             playSound: true,
+            vibrate: true,
             soundName: "default", // (optional) default: Importance.HIGH. Int value of the Android notification importance
         },
         (created: any) => console.log(`createChannel returned '${created}'`) // (optional) callback returns whether the channel was created, false means it already existed.

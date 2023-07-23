@@ -221,8 +221,7 @@ function Profile(props: ProfileProps) {
                   styleTextDropdownSelected={{ fontFamily: Theme.FONTFAMILY.MEDIUM, fontSize: 14, paddingHorizontal: "4%" }}
                   styleTextDropdown={{ fontFamily: Theme.FONTFAMILY.MEDIUM, fontSize: 14, paddingHorizontal: "4%" }}
                   styleDropdownMenuSubsection={{ borderWidth: 1, padding: "8%", borderRadius: 8, height: 48 }}
-                  submitButtonColor={Theme.COLORS.THEME}
-                  submitButtonText="Submit"
+                  hideSubmitButton={true}
                 />
                 <Block>
                   {_.map(_.chunk(profileData?.proffession, 2), (element: string, index: number) => (
@@ -362,8 +361,7 @@ function Profile(props: ProfileProps) {
                 styleTextDropdownSelected={{ fontFamily: Theme.FONTFAMILY.MEDIUM, fontSize: 14, paddingHorizontal: "4%" }}
                 styleTextDropdown={{ fontFamily: Theme.FONTFAMILY.MEDIUM, fontSize: 14, paddingHorizontal: "4%" }}
                 styleDropdownMenuSubsection={{ borderWidth: 1, padding: "8%", borderRadius: 8, height: 48 }}
-                submitButtonColor={Theme.COLORS.THEME}
-                submitButtonText="Submit"
+                hideSubmitButton={true}
               />
               <Block>
                 {_.map(_.chunk(profileData?.interest, 3), (element: string, index: number) => (
