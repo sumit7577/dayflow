@@ -63,18 +63,21 @@ const NewBanner: React.FC<newBannerType> = (prop) => {
         const endTIme = lastMinute === ":60:00" ? timeParser24(workingTable[upperIndex]?.end).split(":")[0] + ":00:00" : timeParser24(item.start).split(":")[0] + lastMinute
         const scheduleTImeStart = timeCreater(startTime)
         const scheduleTImeEnd = timeCreater(endTIme)
-
         const makeSchedule = { start: scheduleTImeStart.toISOString(), end: scheduleTImeEnd.toISOString(), message: scheduleMessage, index: index };
-        AppNotification.scheduleNotification(makeSchedule)
-        setScheduleMessage("")
-        setSchedule(() => {
-            if (schedule) {
-                const oldSchedule: schedule = shortSchedule(JSON.parse(schedule))
-                oldSchedule.push(makeSchedule)
-                return JSON.stringify(oldSchedule)
-            }
-            return JSON.stringify([makeSchedule])
-        })
+        if (new Date(makeSchedule.start).getTime() > new Date(Date.now()).getTime()) {
+            AppNotification.scheduleNotification(makeSchedule)
+            setScheduleMessage("")
+            setSchedule(() => {
+                if (schedule) {
+                    const oldSchedule: schedule = shortSchedule(JSON.parse(schedule))
+                    oldSchedule.push(makeSchedule)
+                    return JSON.stringify(oldSchedule)
+                }
+                return JSON.stringify([makeSchedule])
+            })
+        } else {
+            setError(() => true)
+        }
 
     }
     if ((parseInt(nextTime) > parseInt(prevTime)) || (nextTime == "Invalid Date") && prevDate.getMinutes() + 15 <= 60 && prevDate.getMinutes() !== 0) {
@@ -188,16 +191,20 @@ const Schedule: React.FC<{
         const endTIme = lastMinute === ":60:00" ? timeParser24(workingTable[upperIndex]?.end).split(":")[0] + ":00:00" : timeParser24(start).split(":")[0] + lastMinute
         const scheduleTImeStart = timeCreater(startTime)
         const scheduleTImeEnd = timeCreater(endTIme)
-
         const makeSchedule = { start: scheduleTImeStart.toISOString(), end: scheduleTImeEnd.toISOString(), message: messagePost, index: index };
-        AppNotification.scheduleNotification(makeSchedule)
-        setSchedule(() => {
-            if (schedule) {
-                const oldSchedule: schedule = shortSchedule(JSON.parse(schedule));
-                oldSchedule[index] = makeSchedule
-                return JSON.stringify(oldSchedule)
-            }
-        })
+        if (new Date(makeSchedule.start).getTime() > new Date(Date.now()).getTime()) {
+            AppNotification.scheduleNotification(makeSchedule)
+            setSchedule(() => {
+                if (schedule) {
+                    const oldSchedule: schedule = shortSchedule(JSON.parse(schedule));
+                    oldSchedule[index] = makeSchedule
+                    return JSON.stringify(oldSchedule)
+                }
+            })
+        }
+        else {
+            setError(() => true)
+        }
         setClicked(() => !clicked)
     }
 

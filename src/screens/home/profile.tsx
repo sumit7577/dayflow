@@ -225,9 +225,9 @@ function Profile(props: ProfileProps) {
                 />
                 <Block>
                   {_.map(_.chunk(profileData?.proffession, 2), (element: string, index: number) => (
-                    <Block row style={{ maxWidth: Utils.width / 1.3, flexWrap: 'wrap' }}>
+                    <Block row style={{ maxWidth: Utils.width / 1.3, flexWrap: 'wrap' }} key={index}>
                       {_.map(element, (item: string, i: number) => (
-                        <Block style={[styles.selectedItem, { padding: "4%" }]} row>
+                        <Block style={[styles.selectedItem, { padding: "4%" }]} row key={i}>
                           <Text style={[styles.text, {
                             color: Theme.COLORS.MUTED, fontFamily: Theme.FONTFAMILY.REGULAR,
                             fontSize: 14, padding: 2

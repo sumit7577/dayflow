@@ -41,7 +41,6 @@ const createNotification = () => {
             channelDescription: "A channel to Schedule Notifications", // (optional) default: undefined.
             importance: Importance.HIGH,
             playSound: true,
-            vibrate: true,
             soundName: "default", // (optional) default: Importance.HIGH. Int value of the Android notification importance
         },
         (created: any) => console.log(`createChannel returned '${created}'`) // (optional) callback returns whether the channel was created, false means it already existed.
@@ -49,10 +48,23 @@ const createNotification = () => {
 }
 
 const scheduleNotification = (item: { start: string, end: string, message: string, index: number }) => {
+    const scheduleTime = new Date(item.start).getTime()
+    PushNotification.localNotificationSchedule({
+        channelId: "1",
+        message: item?.message !== "" ? item.message + "in 10 mins" : "You have some scheduled work in 10 minutes", // (required)
+        date: new Date(scheduleTime - 60 * 10 * 1000), // 10 minutes earlier
+        allowWhileIdle: true, // (optional) set notification to work while on doze, default: false
+        repeatType: 'day',
+        repeatTime: 1,
+        playSound: true,
+        soundName: "default",
+        vibrate: true, // (optional) default: true
+        vibration: 300
+    });
     PushNotification.localNotificationSchedule({
         channelId: "1",
         message: item?.message !== "" ? item.message : "You have some scheduled work", // (required)
-        date: new Date(item.start), // in 60 secs
+        date: new Date(scheduleTime), // in 60 secs
         allowWhileIdle: true, // (optional) set notification to work while on doze, default: false
         repeatType: 'day',
         repeatTime: 1,

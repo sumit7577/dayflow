@@ -79,7 +79,7 @@ function Main(prop: MainProps) {
   React.useEffect(() => {
     AppNotification.createNotification()
     PushNotification.getScheduledLocalNotifications((item: typeof AppNotification.NotificationType) => {
-      //console.log("items",item)
+      //console.log("items", item)
     });
     if (schedule) {
       const day = new Date(parsedSchedule[0]?.start).getDate()
@@ -109,26 +109,30 @@ function Main(prop: MainProps) {
     const endTIme = lastMinute === ":60:00" ? timeParser24(workingTable[index].end).split(":")[0] + ":00:00" : timeParser24(workingTable[index].start).split(":")[0] + lastMinute
     const scheduleTImeStart = timeCreater(startTime)
     const scheduleTImeEnd = timeCreater(endTIme)
-
     const makeSchedule = { start: scheduleTImeStart.toISOString(), end: scheduleTImeEnd.toISOString(), message: scheduleMessage, index: index };
-    AppNotification.scheduleNotification(makeSchedule)
-    setScheduleMessage("")
-    setSchedule(() => {
-      if (schedule) {
-        const oldSchedule: schedule = shortSchedule(JSON.parse(schedule))
-        oldSchedule.push(makeSchedule)
-        return JSON.stringify(oldSchedule)
-      }
-      return JSON.stringify([makeSchedule])
-    })
 
+    if (new Date(makeSchedule.start).getTime() > new Date(Date.now()).getTime()) {
+      AppNotification.scheduleNotification(makeSchedule)
+      setScheduleMessage("")
+      setSchedule(() => {
+        if (schedule) {
+          const oldSchedule: schedule = shortSchedule(JSON.parse(schedule))
+          oldSchedule.push(makeSchedule)
+          return JSON.stringify(oldSchedule)
+        }
+        return JSON.stringify([makeSchedule])
+      })
+    }
+    else {
+      setTimeError(() => !error)
+    }
   }
   return (
     <SafeAreaView>
       <Snackbar duration={2000} visible={timeError} style={{ backgroundColor: Theme.COLORS.ERROR, zIndex: 20 }} onDismiss={() => {
         setTimeError(() => false)
       }}>
-        <Text style={[styles.text, { fontSize: 14, color: Theme.COLORS.WHITE }]}>Time must should between 15 minutes</Text>
+        <Text style={[styles.text, { fontSize: 14, color: Theme.COLORS.WHITE }]}>The Time you selected is already passed!</Text>
       </Snackbar>
       <ScrollView showsVerticalScrollIndicator={false}>
         <AppDialogue show={error} error={{
@@ -173,7 +177,7 @@ function Main(prop: MainProps) {
                   <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
                     {workingTable?.map((item, index) => (
                       <>
-                        {filterSchedule(parsedSchedule, item) == -1 ?
+                        {filterSchedule(parsedSchedule, item) == -1 || filterSchedule(parsedSchedule, item) == undefined ?
                           <TouchableRipple key={index} style={{ marginVertical: "4%" }} onPress={() => {
                             if (index === selectedTime) {
                               setSelectedTime(() => null)
