@@ -246,7 +246,8 @@ function Main(prop: MainProps) {
                                 multiline={true} numberOfLines={4} style={{
                                   height: Utils.height / 8,
                                   borderWidth: 2, borderColor: Theme.COLORS.THEME,
-                                }} textInputStyle={{ fontSize: 12 }} />
+                                }}
+                                maxLength={30} textInputStyle={{ fontSize: 12 }} />
 
                               <TouchableRipple onPress={() => {
                                 creaetSchedule(index)

@@ -80,7 +80,7 @@ const NewBanner: React.FC<newBannerType> = (prop) => {
         }
 
     }
-    if ((parseInt(nextTime) > parseInt(prevTime)) || (nextTime == "Invalid Date") && prevDate.getMinutes() + 15 <= 60 && prevDate.getMinutes() !== 0) {
+    if (((parseInt(nextTime) > parseInt(prevTime)) || (nextTime == "Invalid Date")) && (prevDate.getMinutes() + 15 <= 60 && prevDate.getMinutes() !== 0)) {
         return (
             <Block>
                 <TouchableRipple style={{ marginVertical: "4%" }} onPress={() => {
@@ -140,7 +140,9 @@ const NewBanner: React.FC<newBannerType> = (prop) => {
                                 onChangeText={(text) => {
                                     setScheduleMessage(() => text)
                                 }}
-                                multiline={true} numberOfLines={4} style={{
+                                maxLength={30}
+                                multiline={true} numberOfLines={4}
+                                style={{
                                     height: Utils.height / 8,
                                     borderWidth: 2, borderColor: Theme.COLORS.THEME,
                                 }} textInputStyle={{ fontSize: 12 }} />
@@ -162,7 +164,8 @@ const NewBanner: React.FC<newBannerType> = (prop) => {
 }
 
 const Schedule: React.FC<{
-    item: ScheduleProps, index: number,
+    item: ScheduleProps,
+    index: number,
     selected: number,
     setError: React.Dispatch<React.SetStateAction<boolean>>,
     workingTable: Array<{ start: string, end: string }>,
@@ -215,10 +218,12 @@ const Schedule: React.FC<{
     }, [selected])
 
     const deleteSchedule = () => {
-        const newSchedule = reject(parsedSchedule, (singleSchedule, indexs) => indexs == index)
+        const newSchedule = parsedSchedule;
+        newSchedule[index].message = ""
         setSchedule(() => {
             return JSON.stringify(newSchedule)
         })
+        setEdit(()=>!edit)
     }
     return (
         <Block>
@@ -301,7 +306,9 @@ const Schedule: React.FC<{
                             onChangeText={(text) => {
                                 setMessage(() => text)
                             }}
-                            multiline={true} numberOfLines={4} style={{
+                            multiline={true} numberOfLines={4}
+                            maxLength={30}
+                            style={{
                                 height: Utils.height / 8,
                                 borderWidth: 2, borderColor: Theme.COLORS.THEME,
                             }} textInputStyle={{ fontSize: 12 }} />

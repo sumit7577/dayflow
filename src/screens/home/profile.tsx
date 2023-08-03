@@ -3,7 +3,7 @@ import React, { useRef } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Block, Button } from 'galio-framework'
 import { Database, Pictures, Theme, Utils } from '../../constants'
-import { TouchableRipple } from 'react-native-paper'
+import { Snackbar, TouchableRipple } from 'react-native-paper'
 import _ from 'lodash';
 import reject from "lodash/reject";
 import MultiSelect from 'react-native-multiple-select'
@@ -48,6 +48,7 @@ function Profile(props: ProfileProps) {
   const [userDetail, setUserDetail] = useMMKVString("user");
   const [daySelected, setDaySelected] = React.useState<typeof Dates>(Dates);
   const [profileData, setProfileData] = React.useState<Partial<loginResp>>({ working_time_start: timeCreater("8:00:00").toISOString(), working_time_end: timeCreater("17:00:00").toISOString() });
+  const [timeError, setTimeError] = React.useState<boolean>(false);
   const selectProffession = (items: Array<string>) => {
     setProfileData((prev) => ({ ...prev, proffession: items }))
   }
@@ -130,6 +131,11 @@ function Profile(props: ProfileProps) {
       <AppDialogue show={patchProfile.isSuccess} error={{ name: "Success", message: "Profile Updated Successfully!" }} icon={"sticker-check"} onSuccess={() => {
         navigation.goBack()
       }} />
+      <Snackbar duration={2000} visible={timeError} style={{ backgroundColor: Theme.COLORS.ERROR, zIndex: 20 }} onDismiss={() => {
+        setTimeError(() => false)
+      }}>
+        <Text style={[styles.text, { fontSize: 14, color: Theme.COLORS.WHITE }]}>The selected minute must be divisible by 15</Text>
+      </Snackbar>
       <AppLoader show={patchProfile.isLoading || isLoading} />
       <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
         <View style={styles.container}>
@@ -139,7 +145,12 @@ function Profile(props: ProfileProps) {
             open={open}
             date={profileData?.working_time_start ? new Date(profileData.working_time_start) : new Date()}
             onConfirm={(date) => {
-              setProfileData((prev) => ({ ...prev, working_time_start: date.toISOString() }))
+              if (date.getMinutes() % 15 == 0) {
+                setProfileData((prev) => ({ ...prev, working_time_start: date.toISOString() }))
+              }
+              else {
+                setTimeError(() => !timeError)
+              }
             }}
             onCancel={() => {
               setOpen(!open)
@@ -151,7 +162,12 @@ function Profile(props: ProfileProps) {
             open={openEnd}
             date={profileData?.working_time_end ? new Date(profileData.working_time_end) : new Date()}
             onConfirm={(date) => {
-              setProfileData((prev) => ({ ...prev, working_time_end: date.toISOString() }))
+              if (date.getMinutes() % 15 == 0) {
+                setProfileData((prev) => ({ ...prev, working_time_end: date.toISOString() }))
+              }
+              else {
+                setTimeError(() => !timeError)
+              }
             }}
             onCancel={() => {
               setOpenEnd(!openEnd)
@@ -401,8 +417,9 @@ function Profile(props: ProfileProps) {
                   onChangeText={(text) => {
                     setProfileData((prev) => ({ ...prev, about: text }))
                   }} textInputStyle={{ fontSize: 12 }} editable
-                  style={{ height: Utils.height / 4.5, borderWidth: 2 }} multiline
+                  style={{ height: Utils.height / 4.5, borderWidth: 2, alignItems: "flex-start" }} multiline
                   value={profileData?.about}
+                  maxLength={100}
                   numberOfLines={4} />
               </Block>
             </Block>
