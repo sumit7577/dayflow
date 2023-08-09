@@ -8,6 +8,7 @@ import { loginResp } from '../networking/resp-type'
 import { AppAuthScreen, AppHomeScreen } from '../navigators'
 import { useMMKVString } from 'react-native-mmkv'
 import { AppNotification } from '../components'
+import { AppLoader } from '../components'
 
 
 type AppProps = userState & {
@@ -17,15 +18,20 @@ const Navigation: React.FC<AppProps> = ({ userData, isLoggedIn, setUser }) => {
     const [token, setToken] = useMMKVString("user.token");
     const [userDetail, setUserDetail] = useMMKVString("user");
     const [schedule, setSchedule] = useMMKVString("schedule")
+    const [loading,setLoading] = React.useState(true)
     React.useEffect(() => {
         if (token && userDetail) {
             const userData = JSON.parse(userDetail);
             setUser(userData);
+            setLoading(()=>false)
         }
-
+        else{
+            setLoading(()=>false);
+        }
     }, [])
     return (
         <NavigationContainer>
+            <AppLoader show={loading} />
             {isLoggedIn ? <AppHomeScreen /> : <AppAuthScreen />}
         </NavigationContainer>
     )

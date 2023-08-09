@@ -75,6 +75,8 @@ function Main(prop: MainProps) {
   const workingTable = user ? Utils.timeToArray(null, null) : Utils.timeToArray(userData?.working_time_start, userData?.working_time_end)
   const [error, setError] = React.useState<boolean>(false);
   const [timeError, setTimeError] = React.useState<boolean>(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [lastPos, setLastPos] = React.useState<number>(0);
 
   React.useEffect(() => {
     AppNotification.createNotification()
@@ -127,6 +129,16 @@ function Main(prop: MainProps) {
       setTimeError(() => !error)
     }
   }
+
+  const scrollToEdit = (clicked: boolean) => {
+    if (clicked) {
+      scrollViewRef?.current?.scrollTo({ x: 0, y: Math.round(lastPos) + 200, animated: true })
+    }
+    else{
+      scrollViewRef?.current?.scrollTo({ x: 0, y: Math.round(lastPos) - 250, animated: true })
+    }
+
+  }
   return (
     <SafeAreaView>
       <Snackbar duration={2000} visible={timeError} style={{ backgroundColor: Theme.COLORS.ERROR, zIndex: 20 }} onDismiss={() => {
@@ -174,7 +186,13 @@ function Main(prop: MainProps) {
                 </Block>
 
                 <View style={{ maxHeight: Utils.height / 1.8 }}>
-                  <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled={true}>
+                  <ScrollView showsVerticalScrollIndicator={false}
+                    ref={scrollViewRef}
+                    nestedScrollEnabled={true}
+                    onMomentumScrollEnd={(e) => {
+                      e.persist()
+                      setLastPos(() => e?.nativeEvent?.contentOffset.y)
+                    }}>
                     {workingTable?.map((item, index) => (
                       <>
                         {filterSchedule(parsedSchedule, item) == -1 || filterSchedule(parsedSchedule, item) == undefined ?
@@ -264,7 +282,8 @@ function Main(prop: MainProps) {
                           const time = timeParser24(chidItem.start).split(":")[0]
                           const upperTime = timeParser24(item.start).split(":")[0]
                           if (time == upperTime) {
-                            return <AppSchedule item={chidItem} index={indexs} upperIndex={index} selected={selectedTime!!} setError={setTimeError} workingTable={workingTable} />
+                            return <AppSchedule item={chidItem} scrollToEnd={scrollToEdit} index={indexs} upperIndex={index}
+                              selected={selectedTime!!} setError={setTimeError} workingTable={workingTable} />
                           }
                           return null;
                         })}

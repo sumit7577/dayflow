@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, ScrollView } from 'react-native'
 import React from 'react'
 import { Block, Button } from 'galio-framework'
 import { TouchableRipple } from 'react-native-paper'
@@ -169,11 +169,12 @@ const Schedule: React.FC<{
     selected: number,
     setError: React.Dispatch<React.SetStateAction<boolean>>,
     workingTable: Array<{ start: string, end: string }>,
-    upperIndex: number
+    upperIndex: number,
+    scrollToEnd: (data: boolean) => void
 }> = (prop) => {
 
     const { start, end, message } = prop.item;
-    const { index, selected, setError, workingTable, upperIndex } = prop;
+    const { index, selected, setError, workingTable, upperIndex, scrollToEnd } = prop;
     const [sliderValue, setSliderValue] = React.useState<Array<number> | null>(null);
     const [clicked, setClicked] = React.useState(false)
     const [schedule, setSchedule] = useMMKVString("schedule");
@@ -217,13 +218,17 @@ const Schedule: React.FC<{
         }
     }, [selected])
 
+    React.useEffect(() => {
+        scrollToEnd(edit)
+    }, [clicked])
+
     const deleteSchedule = () => {
         const newSchedule = parsedSchedule;
         newSchedule[index].message = ""
         setSchedule(() => {
             return JSON.stringify(newSchedule)
         })
-        setEdit(()=>!edit)
+        setEdit(() => !edit)
     }
     return (
         <Block>
@@ -259,6 +264,7 @@ const Schedule: React.FC<{
             <Block middle style={{ paddingVertical: "4%", borderWidth: 1, borderRadius: 8, borderColor: Theme.COLORS.THEME }}>
                 <TouchableRipple onPress={() => {
                     setEdit(() => !edit)
+                    setClicked(()=>false)
                 }}
                     style={{
                         backgroundColor: Theme.COLORS.THEME, borderRadius: 24,
@@ -269,6 +275,7 @@ const Schedule: React.FC<{
                 {edit ? <Block row space='between'>
                     <Button size={'small'} color={Theme.COLORS.TWITTER} onPress={() => {
                         setClicked(() => !clicked)
+
                     }}>
                         <Text style={[styles.text, { fontSize: 14, color: Theme.COLORS.WHITE }]}>Edit</Text>
                     </Button>
