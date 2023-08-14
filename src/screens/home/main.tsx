@@ -132,10 +132,10 @@ function Main(prop: MainProps) {
 
   const scrollToEdit = (clicked: boolean) => {
     if (clicked) {
-      scrollViewRef?.current?.scrollTo({ x: 0, y: Math.round(lastPos) + 200, animated: true })
+      scrollViewRef?.current?.scrollTo({ x: 0, y: Math.round(lastPos) + 180, animated: true })
     }
     else{
-      scrollViewRef?.current?.scrollTo({ x: 0, y: Math.round(lastPos) - 250, animated: true })
+      scrollViewRef?.current?.scrollTo({ x: 0, y: Math.round(lastPos) - 180, animated: true })
     }
 
   }
@@ -203,6 +203,7 @@ function Main(prop: MainProps) {
                             else {
                               setSelectedTime(() => index)
                             }
+                            scrollToEdit(selectedTime==null)
                           }}>
                             <Block row key={index} space='around' middle style={{
                               borderRadius: 24,

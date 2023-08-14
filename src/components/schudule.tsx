@@ -179,7 +179,7 @@ const Schedule: React.FC<{
     const [clicked, setClicked] = React.useState(false)
     const [schedule, setSchedule] = useMMKVString("schedule");
     const parsedSchedule: schedule = schedule && shortSchedule(JSON.parse(schedule))
-    const [messagePost, setMessage] = React.useState("")
+    const [messagePost, setMessage] = React.useState(message)
     const [edit, setEdit] = React.useState<boolean>(false);
 
     const updateSchedule = () => {
@@ -315,6 +315,7 @@ const Schedule: React.FC<{
                             }}
                             multiline={true} numberOfLines={4}
                             maxLength={30}
+                            value={messagePost}
                             style={{
                                 height: Utils.height / 8,
                                 borderWidth: 2, borderColor: Theme.COLORS.THEME,
