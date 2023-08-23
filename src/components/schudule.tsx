@@ -37,12 +37,12 @@ const NewBanner: React.FC<newBannerType> = (prop) => {
     const { index, item, setError, selected, upperIndex, workingTable } = prop;
     const [schedule, setSchedule] = useMMKVString("schedule");
     const parsedSchedule: schedule = schedule && shortSchedule(JSON.parse(schedule))
-    const [sliderValue, setSliderValue] = React.useState<Array<number> | null>(null);
     const [clicked, setClicked] = React.useState(false)
     const [scheduleMessage, setScheduleMessage] = React.useState<string>("");
     const prevTime = timeParser24(item.start).split(":")[0]
     const nextTime = timeParser24(parsedSchedule[index + 1]?.start)?.split(":")[0]
     const prevDate = new Date(item.end)
+    const [sliderValue, setSliderValue] = React.useState<Array<number> | null>([prevDate.getMinutes(), 60]);
 
     React.useEffect(() => {
         if (selected !== null) {
@@ -175,7 +175,7 @@ const Schedule: React.FC<{
 
     const { start, end, message } = prop.item;
     const { index, selected, setError, workingTable, upperIndex, scrollToEnd } = prop;
-    const [sliderValue, setSliderValue] = React.useState<Array<number> | null>(null);
+    const [sliderValue, setSliderValue] = React.useState<Array<number> | null>([0,60]);
     const [clicked, setClicked] = React.useState(false)
     const [schedule, setSchedule] = useMMKVString("schedule");
     const parsedSchedule: schedule = schedule && shortSchedule(JSON.parse(schedule))

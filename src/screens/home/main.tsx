@@ -16,6 +16,7 @@ import { useMMKVString } from 'react-native-mmkv'
 import { timeParser } from './profile'
 import PushNotification, { Importance } from "react-native-push-notification";
 import { find } from 'lodash'
+import BackgroundFetch from "react-native-background-fetch";
 
 type MainProps = userState & HomeStackProps<"Main"> & {
   setUser: (arg0: loginResp) => void;
@@ -69,7 +70,7 @@ function Main(prop: MainProps) {
   const [schedule, setSchedule] = useMMKVString("schedule");
   const parsedSchedule: schedule = schedule && shortSchedule(JSON.parse(schedule))
   const [selectedTime, setSelectedTime] = React.useState<number | null>(null);
-  const [sliderValue, setSliderValue] = React.useState<Array<number> | null>(null);
+  const [sliderValue, setSliderValue] = React.useState<Array<number> | null>([0, 60]);
   const [scheduleMessage, setScheduleMessage] = React.useState<string>("");
   const user = route.params?.user;
   const workingTable = user ? Utils.timeToArray(null, null) : Utils.timeToArray(userData?.working_time_start, userData?.working_time_end)
@@ -83,6 +84,7 @@ function Main(prop: MainProps) {
     PushNotification.getScheduledLocalNotifications((item: typeof AppNotification.NotificationType) => {
       //console.log("items", item)
     });
+    backgroundWork()
     if (schedule) {
       const day = new Date(parsedSchedule[0]?.start).getDate()
       const currDate = new Date().getDate()
@@ -92,6 +94,35 @@ function Main(prop: MainProps) {
       }
     }
   }, [])
+
+  const event = async function event(id: string) {
+
+  }
+
+  const backgroundWork = async function initBackgroundFetch() {
+    // BackgroundFetch event handler.
+    const onEvent = async (taskId: string) => {
+      console.log('[BackgroundFetch] task: ', taskId);
+      // Do your background work...
+      await event(taskId);
+      // IMPORTANT:  You must signal to the OS that your task is complete.
+      BackgroundFetch.finish(taskId);
+    }
+
+    // Timeout callback is executed when your Task has exceeded its allowed running-time.
+    // You must stop what you're doing immediately BackgroundFetch.finish(taskId)
+    const onTimeout = async (taskId: string) => {
+      console.warn('[BackgroundFetch] TIMEOUT task: ', taskId);
+      BackgroundFetch.finish(taskId);
+    }
+
+    // Initialize BackgroundFetch only once when component mounts.
+    let status = await BackgroundFetch.configure({ minimumFetchInterval: 60 * 12, enableHeadless: true, forceAlarmManager: true, startOnBoot: true, stopOnTerminate: false }, onEvent, onTimeout);
+
+    console.log('[BackgroundFetch] configure status: ', status);
+  }
+
+
 
 
   const onRequest = () => {
@@ -134,7 +165,7 @@ function Main(prop: MainProps) {
     if (clicked) {
       scrollViewRef?.current?.scrollTo({ x: 0, y: Math.round(lastPos) + 180, animated: true })
     }
-    else{
+    else {
       scrollViewRef?.current?.scrollTo({ x: 0, y: Math.round(lastPos) - 180, animated: true })
     }
 
@@ -203,7 +234,7 @@ function Main(prop: MainProps) {
                             else {
                               setSelectedTime(() => index)
                             }
-                            scrollToEdit(selectedTime==null)
+                            scrollToEdit(selectedTime == null)
                           }}>
                             <Block row key={index} space='around' middle style={{
                               borderRadius: 24,
